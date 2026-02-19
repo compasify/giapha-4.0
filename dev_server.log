@@ -1,0 +1,23 @@
+
+> family-tree-app-tmp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.68.103:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 415ms
+ GET /login 200 in 1657ms (compile: 1461ms, proxy.ts: 61ms, render: 135ms)
+ POST /login 200 in 280ms (compile: 16ms, proxy.ts: 4ms, render: 259ms)
+ GET /dashboard 200 in 748ms (compile: 640ms, proxy.ts: 7ms, render: 101ms)
+ GET /dashboard 200 in 84ms (compile: 7ms, proxy.ts: 6ms, render: 72ms)
+ GET /login 200 in 19ms (compile: 3ms, proxy.ts: 1500µs, render: 15ms)
+ POST /dashboard 303 in 61ms (compile: 10ms, proxy.ts: 5ms, render: 45ms)
+ GET /login?from=%2Fdashboard 200 in 39ms (compile: 3ms, proxy.ts: 3ms, render: 32ms)
+ GET /register 200 in 360ms (compile: 328ms, proxy.ts: 4ms, render: 28ms)
+ POST /register 200 in 499ms (compile: 5ms, proxy.ts: 3ms, render: 492ms)
+ GET /dashboard 200 in 74ms (compile: 5ms, proxy.ts: 1635µs, render: 67ms)
+ GET /dashboard 200 in 57ms (compile: 3ms, proxy.ts: 4ms, render: 50ms)
+[?25h

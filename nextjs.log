@@ -1,0 +1,17 @@
+
+> family-tree-app-tmp@0.1.0 dev
+> next dev -p 3001
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.68.103:3001
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 382ms
+ GET /lineage/1 200 in 1232ms (compile: 1059ms, proxy.ts: 52ms, render: 121ms)
+ GET /api/proxy/lineages/1/relationships 200 in 512ms (compile: 469ms, proxy.ts: 5ms, render: 38ms)
+ GET /api/proxy/lineages/1/persons?per_page=500 200 in 531ms (compile: 479ms, proxy.ts: 8ms, render: 45ms)
+ GET /lineage/1 200 in 56ms (compile: 5ms, proxy.ts: 2ms, render: 49ms)
+ GET /api/proxy/lineages/1/relationships 200 in 118ms (compile: 11ms, proxy.ts: 6ms, render: 100ms)
+ GET /api/proxy/lineages/1/persons?per_page=500 200 in 142ms (compile: 8ms, proxy.ts: 8ms, render: 126ms)
