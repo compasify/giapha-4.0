@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, TreePine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,12 @@ export default function LineagesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gia phả</h1>
+        <Button asChild>
+          <Link href="/lineage/new">
+            <Plus className="h-4 w-4 mr-2" />
+            Tạo gia phả mới
+          </Link>
+        </Button>
       </div>
 
       {isLoading ? (
@@ -47,7 +52,15 @@ export default function LineagesPage() {
         </div>
       ) : (
         <div className="text-center py-16 text-muted-foreground">
-          <p>Chưa có gia phả nào. Hãy tạo gia phả đầu tiên.</p>
+          <TreePine className="h-12 w-12 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-medium">Chưa có gia phả nào</p>
+          <p className="text-sm mt-1">Hãy tạo gia phả đầu tiên để bắt đầu.</p>
+          <Button asChild className="mt-4">
+            <Link href="/lineage/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo gia phả mới
+            </Link>
+          </Button>
         </div>
       )}
     </div>

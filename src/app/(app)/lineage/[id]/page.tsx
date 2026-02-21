@@ -1,4 +1,4 @@
-import { TreeView } from './tree-view';
+import { PrivacyGate } from './privacy-gate';
 
 export default async function LineageDetailPage({
   params,
@@ -8,5 +8,5 @@ export default async function LineageDetailPage({
   const { id } = await params;
   const lineageId = Number(id);
 
-  return <TreeView lineageId={lineageId} />;
+  return <PrivacyGate lineageId={lineageId} />;
 }

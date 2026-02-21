@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Trash2, UserPlus, Star, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Trash2, UserPlus, Star, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { resizeImageToBase64 } from '@/lib/utils/resize-image';
 import type { FamilyChartPersonData } from '@/lib/transforms/family-chart-transform';
+import { ChildOrderSection } from '@/components/tree/child-order-section';
+import { DateInputSection } from '@/components/tree/date-input-section';
+import { lunarToSolar } from '@/lib/api/lunar-converter';
 
 export type RelativeType = 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
 
@@ -20,6 +24,8 @@ export interface EditSidebarPerson {
   id: string;
   data: FamilyChartPersonData;
 }
+
+export type CalendarType = 'solar' | 'lunar';
 
 export interface EditSidebarFormValues {
   ho: string;
@@ -29,21 +35,47 @@ export interface EditSidebarFormValues {
   birth_year: string;
   birth_month: string;
   birth_day: string;
+  birth_lunar_year: string;
+  birth_lunar_month: string;
+  birth_lunar_day: string;
+  birth_lunar_leap_month: boolean;
+  birth_calendar_type: CalendarType;
   death_year: string;
   death_month: string;
   death_day: string;
+  death_lunar_year: string;
+  death_lunar_month: string;
+  death_lunar_day: string;
+  death_lunar_leap_month: boolean;
+  death_calendar_type: CalendarType;
   is_alive: boolean;
   birth_date_id: number | null;
   death_date_id: number | null;
+  avatar: string | null;
 }
 
 export type SpouseRelationType = 'spouse_married' | 'concubine' | 'partner' | 'spouse_divorced';
+
+export type ParentRelationType =
+  | 'biological_parent'
+  | 'adoptive_parent'
+  | 'informal_adoptive'
+  | 'step_parent'
+  | 'foster_parent'
+  | 'godparent';
 
 export interface AddRelativePayload {
   personId: string;
   relativeType: RelativeType;
   spouseRelationType?: SpouseRelationType;
+  parentRelationType?: ParentRelationType;
   values: EditSidebarFormValues;
+}
+
+interface ChildInfo {
+  id: string;
+  name: string;
+  birthOrder: number;
 }
 
 interface EditSidebarProps {
@@ -58,31 +90,55 @@ interface EditSidebarProps {
   onDelete: (personId: string) => Promise<void>;
   onAddRelative: (payload: AddRelativePayload) => Promise<void>;
   onAddRelativeClick?: () => void;
+  childrenOfPerson?: ChildInfo[];
+  onReorderChildren?: (orderedChildIds: string[]) => Promise<void>;
+}
+
+function emptyFormValues(): EditSidebarFormValues {
+  return {
+    ho: '', ten_dem: '', ten: '', gender: 'M',
+    birth_year: '', birth_month: '', birth_day: '',
+    birth_lunar_year: '', birth_lunar_month: '', birth_lunar_day: '',
+    birth_lunar_leap_month: false, birth_calendar_type: 'solar',
+    death_year: '', death_month: '', death_day: '',
+    death_lunar_year: '', death_lunar_month: '', death_lunar_day: '',
+    death_lunar_leap_month: false, death_calendar_type: 'solar',
+    is_alive: true, birth_date_id: null, death_date_id: null,
+    avatar: null,
+  };
+}
+
+function numStr(val: number | null | undefined): string {
+  return val != null ? String(val) : '';
 }
 
 function toFormValues(data: FamilyChartPersonData | null): EditSidebarFormValues {
-  if (!data) {
-    return {
-      ho: '', ten_dem: '', ten: '', gender: 'M',
-      birth_year: '', birth_month: '', birth_day: '',
-      death_year: '', death_month: '', death_day: '',
-      is_alive: true, birth_date_id: null, death_date_id: null,
-    };
-  }
+  if (!data) return emptyFormValues();
   return {
     ho: data.ho ?? '',
     ten_dem: data.ten_dem ?? '',
     ten: data.ten ?? '',
     gender: data.gender,
-    birth_year: data.birth_year != null ? String(data.birth_year) : '',
-    birth_month: data.birth_month != null ? String(data.birth_month) : '',
-    birth_day: data.birth_day != null ? String(data.birth_day) : '',
-    death_year: data.death_year != null ? String(data.death_year) : '',
-    death_month: data.death_month != null ? String(data.death_month) : '',
-    death_day: data.death_day != null ? String(data.death_day) : '',
+    birth_year: numStr(data.birth_year),
+    birth_month: numStr(data.birth_month),
+    birth_day: numStr(data.birth_day),
+    birth_lunar_year: numStr(data.birth_lunar_year),
+    birth_lunar_month: numStr(data.birth_lunar_month),
+    birth_lunar_day: numStr(data.birth_lunar_day),
+    birth_lunar_leap_month: data.birth_lunar_leap_month ?? false,
+    birth_calendar_type: (data.birth_calendar_type === 'lunar' ? 'lunar' : 'solar') as CalendarType,
+    death_year: numStr(data.death_year),
+    death_month: numStr(data.death_month),
+    death_day: numStr(data.death_day),
+    death_lunar_year: numStr(data.death_lunar_year),
+    death_lunar_month: numStr(data.death_lunar_month),
+    death_lunar_day: numStr(data.death_lunar_day),
+    death_lunar_leap_month: data.death_lunar_leap_month ?? false,
+    death_calendar_type: (data.death_calendar_type === 'lunar' ? 'lunar' : 'solar') as CalendarType,
     is_alive: data.is_alive,
     birth_date_id: data.birth_date_id ?? null,
     death_date_id: data.death_date_id ?? null,
+    avatar: data.avatar ?? null,
   };
 }
 
@@ -98,6 +154,8 @@ export function EditSidebar({
   onDelete,
   onAddRelative,
   onAddRelativeClick,
+  childrenOfPerson,
+  onReorderChildren,
 }: EditSidebarProps) {
   const [values, setValues] = useState<EditSidebarFormValues>(() =>
     toFormValues(person?.data ?? null)
@@ -105,8 +163,23 @@ export function EditSidebar({
   const [isAlive, setIsAlive] = useState(person?.data.is_alive ?? true);
   const [newRelType, setNewRelType] = useState<RelativeType>(relativeType ?? 'son');
   const [spouseRelType, setSpouseRelType] = useState<SpouseRelationType>('spouse_married');
+  const [parentRelType, setParentRelType] = useState<ParentRelationType>('biological_parent');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    try {
+      const base64 = await resizeImageToBase64(file, 200);
+      setValues((prev) => ({ ...prev, avatar: base64 }));
+    } catch {
+      setError('Không thể xử lý ảnh');
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
   useEffect(() => {
     if (mode === 'new') {
@@ -131,19 +204,49 @@ export function EditSidebar({
     if (field === 'is_alive') setIsAlive(val as boolean);
   }
 
+  async function convertLunarIfNeeded(vals: EditSidebarFormValues): Promise<EditSidebarFormValues> {
+    const result = { ...vals };
+    if (result.birth_calendar_type === 'lunar' && result.birth_lunar_year && result.birth_lunar_month && result.birth_lunar_day) {
+      const solar = await lunarToSolar(
+        parseInt(result.birth_lunar_year, 10),
+        parseInt(result.birth_lunar_month, 10),
+        parseInt(result.birth_lunar_day, 10),
+        result.birth_lunar_leap_month,
+      );
+      result.birth_year = String(solar.solar_year);
+      result.birth_month = String(solar.solar_month);
+      result.birth_day = String(solar.solar_day);
+    }
+    if (result.death_calendar_type === 'lunar' && result.death_lunar_year && result.death_lunar_month && result.death_lunar_day) {
+      const solar = await lunarToSolar(
+        parseInt(result.death_lunar_year, 10),
+        parseInt(result.death_lunar_month, 10),
+        parseInt(result.death_lunar_day, 10),
+        result.death_lunar_leap_month,
+      );
+      result.death_year = String(solar.solar_year);
+      result.death_month = String(solar.solar_month);
+      result.death_day = String(solar.solar_day);
+    }
+    return result;
+  }
+
   async function handleSave() {
     if (!person) return;
     setIsLoading(true);
     setError(null);
     try {
-      const payload: EditSidebarFormValues = { ...values, is_alive: isAlive };
+      const converted = await convertLunarIfNeeded({ ...values, is_alive: isAlive });
+      const payload: EditSidebarFormValues = converted;
       if (mode === 'edit') {
         await onSave(person.id, payload);
       } else {
+        const isParentChild = ['father', 'mother', 'son', 'daughter'].includes(newRelType);
         await onAddRelative({
           personId: person.id,
           relativeType: newRelType,
           spouseRelationType: newRelType === 'spouse' ? spouseRelType : undefined,
+          parentRelationType: isParentChild ? parentRelType : undefined,
           values: payload,
         });
       }
@@ -229,8 +332,53 @@ export function EditSidebar({
                   </Select>
                 </div>
               )}
+              {['father', 'mother', 'son', 'daughter'].includes(newRelType) && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Loại quan hệ</Label>
+                  <Select value={parentRelType} onValueChange={(v) => setParentRelType(v as ParentRelationType)}>
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="biological_parent">Con ruột</SelectItem>
+                      <SelectItem value="adoptive_parent">Con nuôi</SelectItem>
+                      <SelectItem value="informal_adoptive">Con nuôi (không chính thức)</SelectItem>
+                      <SelectItem value="step_parent">Con riêng</SelectItem>
+                      <SelectItem value="foster_parent">Con nuôi tạm</SelectItem>
+                      <SelectItem value="godparent">Kết nghĩa (cha/mẹ đỡ đầu)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </>
           )}
+
+          <div className="flex justify-center">
+            <button
+              type="button"
+              className="relative group size-16 rounded-full overflow-hidden border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              title="Đổi ảnh đại diện"
+            >
+              {values.avatar ? (
+                <img src={values.avatar} alt="Avatar" className="size-full object-cover" />
+              ) : (
+                <div className="size-full flex items-center justify-center bg-muted text-muted-foreground text-lg font-semibold">
+                  {((values.ho?.charAt(0) ?? '') + (values.ten?.charAt(0) ?? '')).toUpperCase() || '?'}
+                </div>
+              )}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="size-4 text-white" />
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </div>
 
           <div className="space-y-1">
             <Label className="text-xs" htmlFor="es-ho">Họ</Label>
@@ -284,42 +432,30 @@ export function EditSidebar({
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs">Ngày sinh (dương lịch)</Label>
-            <div className="flex gap-1.5">
-              <Input
-                id="es-birth-day"
-                size={1}
-                className="h-8 text-sm w-16"
-                value={values.birth_day}
-                onChange={(e) => handleChange('birth_day', e.target.value)}
-                placeholder="Ngày"
-                type="number"
-                min={1}
-                max={31}
-              />
-              <Input
-                id="es-birth-month"
-                size={1}
-                className="h-8 text-sm w-16"
-                value={values.birth_month}
-                onChange={(e) => handleChange('birth_month', e.target.value)}
-                placeholder="Tháng"
-                type="number"
-                min={1}
-                max={12}
-              />
-              <Input
-                id="es-birth-year"
-                size={1}
-                className="h-8 text-sm flex-1"
-                value={values.birth_year}
-                onChange={(e) => handleChange('birth_year', e.target.value)}
-                placeholder="Năm"
-                type="number"
-              />
-            </div>
-          </div>
+          <DateInputSection
+            label="Ngày sinh"
+            solarDay={values.birth_day}
+            solarMonth={values.birth_month}
+            solarYear={values.birth_year}
+            lunarDay={values.birth_lunar_day}
+            lunarMonth={values.birth_lunar_month}
+            lunarYear={values.birth_lunar_year}
+            lunarLeapMonth={values.birth_lunar_leap_month}
+            calendarType={values.birth_calendar_type}
+            onSolarChange={(field, value) => {
+              const key = field === 'day' ? 'birth_day' : field === 'month' ? 'birth_month' : 'birth_year';
+              handleChange(key, value);
+            }}
+            onLunarChange={(field, value) => {
+              if (field === 'leapMonth') {
+                handleChange('birth_lunar_leap_month', value as boolean);
+              } else {
+                const key = field === 'day' ? 'birth_lunar_day' : field === 'month' ? 'birth_lunar_month' : 'birth_lunar_year';
+                handleChange(key, value as string);
+              }
+            }}
+            onCalendarTypeChange={(type) => handleChange('birth_calendar_type', type)}
+          />
 
           <div className="space-y-1">
             <Label className="text-xs flex items-center gap-2">
@@ -334,42 +470,34 @@ export function EditSidebar({
           </div>
 
           {!isAlive && (
-            <div className="space-y-1">
-              <Label className="text-xs">Ngày mất (dương lịch)</Label>
-              <div className="flex gap-1.5">
-                <Input
-                  id="es-death-day"
-                  size={1}
-                  className="h-8 text-sm w-16"
-                  value={values.death_day}
-                  onChange={(e) => handleChange('death_day', e.target.value)}
-                  placeholder="Ngày"
-                  type="number"
-                  min={1}
-                  max={31}
-                />
-                <Input
-                  id="es-death-month"
-                  size={1}
-                  className="h-8 text-sm w-16"
-                  value={values.death_month}
-                  onChange={(e) => handleChange('death_month', e.target.value)}
-                  placeholder="Tháng"
-                  type="number"
-                  min={1}
-                  max={12}
-                />
-                <Input
-                  id="es-death-year"
-                  size={1}
-                  className="h-8 text-sm flex-1"
-                  value={values.death_year}
-                  onChange={(e) => handleChange('death_year', e.target.value)}
-                  placeholder="Năm"
-                  type="number"
-                />
-              </div>
-            </div>
+            <DateInputSection
+              label="Ngày mất"
+              solarDay={values.death_day}
+              solarMonth={values.death_month}
+              solarYear={values.death_year}
+              lunarDay={values.death_lunar_day}
+              lunarMonth={values.death_lunar_month}
+              lunarYear={values.death_lunar_year}
+              lunarLeapMonth={values.death_lunar_leap_month}
+              calendarType={values.death_calendar_type}
+              onSolarChange={(field, value) => {
+                const key = field === 'day' ? 'death_day' : field === 'month' ? 'death_month' : 'death_year';
+                handleChange(key, value);
+              }}
+              onLunarChange={(field, value) => {
+                if (field === 'leapMonth') {
+                  handleChange('death_lunar_leap_month', value as boolean);
+                } else {
+                  const key = field === 'day' ? 'death_lunar_day' : field === 'month' ? 'death_lunar_month' : 'death_lunar_year';
+                  handleChange(key, value as string);
+                }
+              }}
+              onCalendarTypeChange={(type) => handleChange('death_calendar_type', type)}
+            />
+          )}
+
+          {mode === 'edit' && childrenOfPerson && onReorderChildren && childrenOfPerson.length >= 2 && (
+            <ChildOrderSection children={childrenOfPerson} onReorder={onReorderChildren} />
           )}
 
           {error && (

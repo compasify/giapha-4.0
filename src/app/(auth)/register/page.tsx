@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { OAuthButtons } from '@/components/shared/oauth-buttons';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -56,6 +57,7 @@ export default function RegisterPage() {
         <CardDescription>Tạo tài khoản Gia Phả Online mới</CardDescription>
       </CardHeader>
       <CardContent>
+        <OAuthButtons />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Họ và tên</Label>

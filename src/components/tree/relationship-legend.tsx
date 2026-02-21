@@ -12,6 +12,8 @@ const LEGEND_ITEMS = [
   { label: 'Hôn nhân', className: 'link-spouse', color: 'var(--tree-link-spouse)', dash: 'none' },
 ] as const;
 
+const SPOUSE_GROUP_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6'];
+
 export function RelationshipLegend() {
   const [expanded, setExpanded] = useState(false);
 
@@ -58,6 +60,16 @@ export function RelationshipLegend() {
             <span className="text-[10px] text-muted-foreground leading-none">{item.label}</span>
           </div>
         ))}
+        <div className="border-t pt-1.5 mt-0.5">
+          <div className="flex items-center gap-2">
+            <div className="flex gap-0.5 flex-shrink-0 w-[28px] justify-center">
+              {SPOUSE_GROUP_COLORS.slice(0, 3).map((c) => (
+                <span key={c} className="inline-block w-[6px] h-[6px] rounded-full" style={{ background: c }} />
+              ))}
+            </div>
+            <span className="text-[10px] text-muted-foreground leading-none">Nhóm hôn phối</span>
+          </div>
+        </div>
       </div>
     </div>
   );

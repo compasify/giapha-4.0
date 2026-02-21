@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentUser } from '@/app/actions/auth-actions';
 import { Users, BookOpen, Calendar } from 'lucide-react';
+import { UpcomingEventsWidget } from '@/components/events/upcoming-events-widget';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
           value={null}
         />
       </div>
+      <UpcomingEventsWidget />
     </div>
   );
 }

@@ -1,33 +1,66 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { FamilyTree, FamilyChartInstance } from '@/components/tree/family-tree';
 import { TreeToolbar } from '@/components/tree/tree-toolbar';
 import { TreeControls, handleZoom } from '@/components/tree/tree-controls';
 import { RelationshipLegend } from '@/components/tree/relationship-legend';
-import { MiniMap } from '@/components/tree/mini-map';
+
+import { ExportDialog } from '@/components/tree/export-dialog';
+import { ShareDialog } from '@/components/tree/share-dialog';
+import { XungHoTooltip } from '@/components/tree/xung-ho-tooltip';
 import { useStarredStore } from '@/stores/starred-store';
-import { setStarredIds } from '@/components/tree/tree-card-template';
+import { setStarredIds, setCollapsedState } from '@/components/tree/tree-card-template';
 import { EditSidebar, EditSidebarPerson } from '@/components/tree/edit-sidebar';
+import { TreeContextMenu, type ContextMenuAction } from '@/components/tree/tree-context-menu';
+import { filterByCollapsed } from '@/lib/utils/filter-collapsed-tree';
 import { BiographyPopup } from '@/components/tree/biography-popup';
 import { BranchFilter, filterByBranch } from '@/components/tree/branch-filter';
 import { DepthSlider, getMaxGeneration, filterByDepth } from '@/components/tree/depth-slider';
+import type { FamilyChartDatum, RelationshipInfo } from '@/lib/transforms/family-chart-transform';
+import { KeyboardShortcutsHelp } from '@/components/tree/keyboard-shortcuts-help';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Focus } from 'lucide-react';
+import { Focus, Download, Share2, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { useFamilyTreeData } from '@/hooks/use-family-tree-data';
+import { useLineage } from '@/hooks/use-lineages';
 import type { EditTreeInstance } from '@/components/tree/tree-edit-integration';
-import { useTreeCrud } from './tree-view-helpers';
+import { useTreeCrud, useAddAncestor, useReorderChildren, useReparent, useCreateRootPerson } from './tree-view-helpers';
+import { EmptyTreeState } from '@/components/tree/empty-tree-state';
+import { useTreeDragDrop } from '@/hooks/use-tree-drag-drop';
+import { ReparentConfirmDialog } from '@/components/tree/reparent-confirm-dialog';
+import type { ParentRelationType } from '@/components/tree/edit-sidebar';
+
+function findSiblings(personId: string, data: FamilyChartDatum[]): string[] {
+  const dataMap = new Map(data.map((d) => [d.id, d]));
+  const person = dataMap.get(personId);
+  if (!person) return [personId];
+
+  const parentId = person.rels.parents[0];
+  if (!parentId) return [personId];
+
+  const parent = dataMap.get(parentId);
+  if (!parent) return [personId];
+
+  return parent.rels.children.filter((cid) => dataMap.has(cid));
+}
 
 interface TreeViewProps {
   lineageId: number;
 }
 
 export function TreeView({ lineageId }: TreeViewProps) {
+  const { data: lineage } = useLineage(lineageId);
   const { data: transformResult, isLoading, error } = useFamilyTreeData(lineageId);
   const treeData = useMemo(() => transformResult?.data ?? [], [transformResult]);
   const linkMap = useMemo(() => transformResult?.linkMap ?? new Map(), [transformResult]);
+  const relationshipMap = useMemo(() => transformResult?.relationshipMap ?? new Map(), [transformResult]);
   const { handleSave, handleDelete, handleAddRelative } = useTreeCrud(lineageId);
+  const handleAddAncestor = useAddAncestor(lineageId);
+  const handleReorderChildren = useReorderChildren(lineageId);
+  const handleReparent = useReparent(lineageId);
+  const handleCreateRoot = useCreateRootPerson(lineageId);
   const [chart, setChart] = useState<FamilyChartInstance | null>(null);
   const [editTree, setEditTree] = useState<EditTreeInstance | null>(null);
   const editTreeRef = useRef<EditTreeInstance | null>(null);
@@ -36,9 +69,22 @@ export function TreeView({ lineageId }: TreeViewProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPerson, setSidebarPerson] = useState<EditSidebarPerson | null>(null);
   const [sidebarMode, setSidebarMode] = useState<'edit' | 'new'>('edit');
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const [branchFilter, setBranchFilter] = useState('all');
   const [focusPersonId, setFocusPersonId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const [contextMenu, setContextMenu] = useState<{
+    personId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [reparentPending, setReparentPending] = useState<{
+    sourceId: string;
+    targetId: string;
+  } | null>(null);
 
   const starredIds = useStarredStore((s) => s.starredIds);
   const toggleStarred = useStarredStore((s) => s.toggle);
@@ -52,8 +98,8 @@ export function TreeView({ lineageId }: TreeViewProps) {
 
   useEffect(() => { setDepthLimit(maxGen); }, [maxGen]);
 
-  const filteredData = useMemo(() => {
-    if (treeData.length === 0) return [];
+  const { filteredData, hiddenCounts } = useMemo(() => {
+    if (treeData.length === 0) return { filteredData: [], hiddenCounts: new Map<string, number>() };
     let result = filterByBranch(treeData, branchFilter);
     result = filterByDepth(result, depthLimit);
 
@@ -83,37 +129,287 @@ export function TreeView({ lineageId }: TreeViewProps) {
       result = result.filter((d) => included.has(d.id));
     }
 
-    return result;
-  }, [treeData, branchFilter, depthLimit, focusPersonId]);
+    const { filtered, hiddenCounts } = filterByCollapsed(result, collapsedIds);
+    return { filteredData: filtered, hiddenCounts };
+  }, [treeData, branchFilter, depthLimit, focusPersonId, collapsedIds]);
+
+  useEffect(() => {
+    setCollapsedState(collapsedIds, hiddenCounts);
+  }, [collapsedIds, hiddenCounts]);
+
+  const handleTreeDrop = useCallback((sourceId: string, targetId: string) => {
+    setReparentPending({ sourceId, targetId });
+  }, []);
+
+  useTreeDragDrop({
+    data: treeData,
+    containerRef,
+    onDrop: handleTreeDrop,
+    enabled: treeData.length > 0,
+  });
+
+  const handleReparentConfirm = useCallback(async (relType: ParentRelationType) => {
+    if (!reparentPending) return;
+    const { sourceId, targetId } = reparentPending;
+
+    const rels = relationshipMap.get(sourceId) ?? [];
+    const sourcePerson = treeData.find((d) => d.id === sourceId);
+    const parentRel = rels.find(
+      (r: RelationshipInfo) => r.toId === sourceId && sourcePerson?.rels.parents.includes(r.fromId)
+    );
+
+    if (parentRel) {
+      await handleReparent(sourceId, targetId, relType, parentRel.id);
+    }
+    setReparentPending(null);
+  }, [reparentPending, relationshipMap, treeData, handleReparent]);
+
+  const selectedPersonIdRef = useRef<string | null>(null);
 
   useEffect(() => { editTreeRef.current = editTree; }, [editTree]);
 
   useEffect(() => {
+    if (sidebarPerson) selectedPersonIdRef.current = sidebarPerson.id;
+  }, [sidebarPerson]);
+
+  const navigateTo = useCallback((id: string) => {
+    if (!chart) return;
+    chart.updateMainId(id);
+    chart.updateTree({ tree_position: 'main_to_middle' });
+    selectedPersonIdRef.current = id;
+    const datum = treeData.find((d) => d.id === id);
+    if (datum) {
+      setSidebarPerson({ id: datum.id, data: datum.data });
+      setSidebarMode('edit');
+      setSidebarOpen(true);
+    }
+  }, [chart, treeData]);
+
+  const searchSelectRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+      if (e.key === 'Escape') {
+        if (contextMenu) { setContextMenu(null); e.preventDefault(); return; }
+        if (sidebarOpen) { setSidebarOpen(false); e.preventDefault(); return; }
+        if (focusPersonId) { setFocusPersonId(null); e.preventDefault(); return; }
+        return;
+      }
+
+      if (isInput) return;
 
       if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
         e.preventDefault();
         editTreeRef.current?.history.canBack() && editTreeRef.current.history.back();
+        return;
       }
       if (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
         e.preventDefault();
         editTreeRef.current?.history.canForward() && editTreeRef.current.history.forward();
+        return;
       }
-      if (e.key === 'Escape' && focusPersonId) {
-        setFocusPersonId(null);
+      if (e.key === 'f' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchSelectRef.current?.click();
+        return;
       }
-      if (e.key === '=' || e.key === '+') {
-        handleZoom(chart, 1.2);
+
+      if (e.key === '=' || e.key === '+') { handleZoom(chart, 1.2); return; }
+      if (e.key === '-') { handleZoom(chart, 0.8); return; }
+      if (e.key === 'f' || e.key === 'F') {
+        chart?.updateTree({ tree_position: 'fit' });
+        return;
       }
-      if (e.key === '-') {
-        handleZoom(chart, 0.8);
+      if (e.key === '?') { setShowShortcutsHelp((p) => !p); return; }
+
+      const currentId = selectedPersonIdRef.current;
+      if (!currentId) return;
+      const dataMap = new Map(filteredData.map((d) => [d.id, d]));
+      const current = dataMap.get(currentId);
+      if (!current) return;
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const parentId = current.rels.parents[0];
+        if (parentId && dataMap.has(parentId)) navigateTo(parentId);
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const childId = current.rels.children[0];
+        if (childId && dataMap.has(childId)) navigateTo(childId);
+        return;
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        const siblings = findSiblings(currentId, filteredData);
+        if (siblings.length <= 1) return;
+        const idx = siblings.indexOf(currentId);
+        const next = e.key === 'ArrowRight'
+          ? siblings[(idx + 1) % siblings.length]
+          : siblings[(idx - 1 + siblings.length) % siblings.length];
+        if (next) navigateTo(next);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const datum = treeData.find((d) => d.id === currentId);
+        if (datum) {
+          setSidebarPerson({ id: datum.id, data: datum.data });
+          setSidebarMode('edit');
+          setSidebarOpen(true);
+        }
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusPersonId, chart]);
+  }, [focusPersonId, chart, filteredData, treeData, navigateTo, sidebarOpen]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    function findPersonIdFromTarget(target: EventTarget | null): string | null {
+      let node = target as HTMLElement | null;
+      while (node && node !== el) {
+        if (node.classList?.contains('f3-vn-card')) return node.getAttribute('data-person-id');
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function handleContextMenu(e: MouseEvent) {
+      const pid = findPersonIdFromTarget(e.target);
+      if (!pid) return;
+      e.preventDefault();
+      setContextMenu({ personId: pid, x: e.clientX, y: e.clientY });
+    }
+
+    el.addEventListener('contextmenu', handleContextMenu);
+    return () => el.removeEventListener('contextmenu', handleContextMenu);
+  }, [treeData]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastTapTime = 0;
+    let lastTapId = '';
+
+    function findPersonId(target: EventTarget | null): string | null {
+      let node = target as HTMLElement | null;
+      while (node && node !== el) {
+        if (node.classList?.contains('f3-vn-card')) return node.getAttribute('data-person-id');
+        node = node.parentElement;
+      }
+      return null;
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+      if (e.touches.length !== 1) return;
+      const pid = findPersonId(e.target);
+      if (!pid) return;
+
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        const datum = treeData.find((d) => d.id === pid);
+        if (datum) {
+          setSidebarPerson({ id: datum.id, data: datum.data });
+          setSidebarMode('edit');
+          setSidebarOpen(true);
+        }
+      }, 500);
+    }
+
+    function handleTouchEnd(e: TouchEvent) {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+
+      const pid = findPersonId(e.target);
+      if (!pid) return;
+
+      const now = Date.now();
+      if (pid === lastTapId && now - lastTapTime < 400) {
+        handlePersonDoubleClick(Number(pid));
+        lastTapId = '';
+        lastTapTime = 0;
+      } else {
+        lastTapId = pid;
+        lastTapTime = now;
+      }
+    }
+
+    function handleTouchMove() {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }
+
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchend', handleTouchEnd, { passive: true });
+    el.addEventListener('touchmove', handleTouchMove, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchmove', handleTouchMove);
+      if (longPressTimer) clearTimeout(longPressTimer);
+    };
+  }, [treeData]);
+
+  const handleContextMenuAction = useCallback(
+    (personId: string, action: ContextMenuAction) => {
+      const datum = treeData.find((d) => d.id === personId);
+      if (!datum) return;
+
+      switch (action.type) {
+        case 'add-child':
+          setSidebarPerson({ id: datum.id, data: datum.data });
+          setSidebarMode('new');
+          setSidebarOpen(true);
+          break;
+        case 'add-spouse':
+          setSidebarPerson({ id: datum.id, data: datum.data });
+          setSidebarMode('new');
+          setSidebarOpen(true);
+          break;
+        case 'add-parent': {
+          const rootIds = new Set(treeData.filter((d) => d.rels.parents.length === 0).map((d) => d.id));
+          if (rootIds.has(personId)) {
+            handleAddAncestor(personId);
+          }
+          break;
+        }
+        case 'edit':
+          setSidebarPerson({ id: datum.id, data: datum.data });
+          setSidebarMode('edit');
+          setSidebarOpen(true);
+          break;
+        case 'delete':
+          handleDelete(personId);
+          break;
+        case 'toggle-collapse':
+          setCollapsedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(personId)) {
+              next.delete(personId);
+            } else {
+              next.add(personId);
+            }
+            return next;
+          });
+          break;
+        case 'focus':
+          setFocusPersonId((prev) => (prev === personId ? null : personId));
+          break;
+        case 'view-kinship':
+          navigateTo(personId);
+          break;
+      }
+    },
+    [treeData, handleDelete, handleAddAncestor, navigateTo],
+  );
 
   function handlePersonClick(personId: number) {
     if (treeData.length === 0) return;
@@ -123,6 +419,23 @@ export function TreeView({ lineageId }: TreeViewProps) {
     setSidebarMode('edit');
     setSidebarOpen(true);
   }
+
+  const sidebarChildrenInfo = useMemo(() => {
+    if (!sidebarPerson || sidebarMode !== 'edit') return [];
+    const person = treeData.find((d) => d.id === sidebarPerson.id);
+    if (!person || person.rels.children.length < 2) return [];
+    return person.rels.children
+      .map((cid) => {
+        const child = treeData.find((d) => d.id === cid);
+        if (!child) return null;
+        return {
+          id: child.id,
+          name: child.data.full_name || '(Không rõ)',
+          birthOrder: child.data.birth_order,
+        };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+  }, [sidebarPerson, sidebarMode, treeData]);
 
   function handlePersonDoubleClick(personId: number) {
     const id = String(personId);
@@ -147,11 +460,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
   }
 
   if (treeData.length === 0) {
-    return (
-      <div className="flex h-64 items-center justify-center text-muted-foreground">
-        Dòng họ chưa có thành viên nào.
-      </div>
-    );
+    return <EmptyTreeState onCreateRoot={handleCreateRoot} />;
   }
 
   const toolbarExtras = (
@@ -169,13 +478,29 @@ export function TreeView({ lineageId }: TreeViewProps) {
           Thoát focus
         </Button>
       )}
+      <div className="flex items-center gap-1 ml-auto">
+        <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowExport(true)}>
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Xuất</span>
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowShare(true)}>
+          <Share2 className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Chia sẻ</span>
+        </Button>
+        <Button asChild variant="outline" size="sm" className="gap-1">
+          <Link href={`/lineage/${lineageId}/settings`}>
+            <Settings className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Cài đặt</span>
+          </Link>
+        </Button>
+      </div>
     </>
   );
 
   return (
     <div className="-m-4 md:-m-6 flex flex-col h-[calc(100dvh-3.5rem)]">
       <div className="px-4 md:px-6 border-b flex-shrink-0">
-        <TreeToolbar chart={chart} data={treeData} editTree={editTree} extraControls={toolbarExtras} />
+        <TreeToolbar chart={chart} data={treeData} editTree={editTree} extraControls={toolbarExtras} searchSelectRef={searchSelectRef} />
       </div>
       <div className="flex flex-1 overflow-hidden">
         <div className="relative flex-1 min-w-0" ref={containerRef}>
@@ -192,8 +517,32 @@ export function TreeView({ lineageId }: TreeViewProps) {
           />
           <BiographyPopup container={containerRef.current} data={treeData} />
           <RelationshipLegend />
-          <MiniMap chart={chart} />
-          <TreeControls chart={chart} />
+          <TreeControls chart={chart} onShowShortcuts={() => setShowShortcutsHelp(true)} />
+          <XungHoTooltip
+            data={treeData}
+            container={containerRef.current}
+            selectedPersonId={sidebarPerson?.id ?? null}
+          />
+          {contextMenu && (() => {
+            const datum = treeData.find((d) => d.id === contextMenu.personId);
+            if (!datum) return null;
+            const fullName = [datum.data.ho, datum.data.ten_dem, datum.data.ten].filter(Boolean).join(' ') || '(Không rõ)';
+            const rootIds = new Set(treeData.filter((d) => d.rels.parents.length === 0).map((d) => d.id));
+            return (
+              <TreeContextMenu
+                personName={fullName}
+                position={{ x: contextMenu.x, y: contextMenu.y }}
+                isCollapsed={collapsedIds.has(contextMenu.personId)}
+                hasChildren={datum.rels.children.length > 0}
+                isRoot={rootIds.has(contextMenu.personId)}
+                onClose={() => setContextMenu(null)}
+                onAction={(action) => handleContextMenuAction(contextMenu.personId, action)}
+              />
+            );
+          })()}
+          <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {sidebarPerson ? `Đã chọn: ${treeData.find((d) => d.id === sidebarPerson.id)?.data.full_name ?? ''}` : ''}
+          </div>
         </div>
         <EditSidebar
           open={sidebarOpen}
@@ -206,8 +555,27 @@ export function TreeView({ lineageId }: TreeViewProps) {
           onDelete={handleDelete}
           onAddRelative={handleAddRelative}
           onAddRelativeClick={() => setSidebarMode('new')}
+          childrenOfPerson={sidebarChildrenInfo}
+          onReorderChildren={handleReorderChildren}
         />
       </div>
+      <KeyboardShortcutsHelp open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp} />
+      <ExportDialog open={showExport} onOpenChange={setShowExport} chart={chart} />
+      <ShareDialog open={showShare} onOpenChange={setShowShare} lineageId={lineageId} accessCodeRequired={lineage?.privacy_level === 2} />
+      {reparentPending && (() => {
+        const source = treeData.find((d) => d.id === reparentPending.sourceId);
+        const target = treeData.find((d) => d.id === reparentPending.targetId);
+        if (!source || !target) return null;
+        return (
+          <ReparentConfirmDialog
+            open={true}
+            onOpenChange={(open) => { if (!open) setReparentPending(null); }}
+            childName={source.data.full_name || '(Không rõ)'}
+            newParentName={target.data.full_name || '(Không rõ)'}
+            onConfirm={handleReparentConfirm}
+          />
+        );
+      })()}
     </div>
   );
 }

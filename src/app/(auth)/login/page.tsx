@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { OAuthButtons } from '@/components/shared/oauth-buttons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,6 +52,7 @@ export default function LoginPage() {
         <CardDescription>Đăng nhập vào tài khoản Gia Phả Online của bạn</CardDescription>
       </CardHeader>
       <CardContent>
+        <OAuthButtons />
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="login">Email hoặc tên đăng nhập</Label>

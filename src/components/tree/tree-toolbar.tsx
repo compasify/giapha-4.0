@@ -19,9 +19,10 @@ interface TreeToolbarProps {
   data: FamilyChartDatum[];
   editTree?: EditTreeInstance | null;
   extraControls?: ReactNode;
+  searchSelectRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
-export function TreeToolbar({ chart, data, editTree, extraControls }: TreeToolbarProps) {
+export function TreeToolbar({ chart, data, editTree, extraControls, searchSelectRef }: TreeToolbarProps) {
   const [orientation, setOrientation] = useState<'horizontal' | 'vertical'>('vertical');
   const [, forceUpdate] = useState(0);
 
@@ -57,7 +58,7 @@ export function TreeToolbar({ chart, data, editTree, extraControls }: TreeToolba
   return (
     <div className="flex items-center gap-2 px-1 py-2 flex-wrap">
       <Select onValueChange={handlePersonSelect}>
-        <SelectTrigger size="sm" className="w-56">
+        <SelectTrigger ref={searchSelectRef} size="sm" className="w-56">
           <SelectValue placeholder="Tìm thành viên..." />
         </SelectTrigger>
         <SelectContent>

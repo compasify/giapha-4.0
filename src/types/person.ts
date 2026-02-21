@@ -50,6 +50,7 @@ export interface Person {
   burial_longitude: number | null;
   cover_photo: string | null;
   privacy_level: number | null;
+  birth_order: number;
   parents_count: number;
   children_count: number;
   spouses_count: number;

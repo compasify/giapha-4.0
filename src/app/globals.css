@@ -225,6 +225,13 @@
   font-weight: 700;
   border: 1.5px solid;
   line-height: 1;
+  overflow: hidden;
+}
+.f3-vn-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .f3-vn-info {
   flex: 1;
@@ -269,6 +276,62 @@
   line-height: 1;
 }
 
+/* Drag & drop re-parenting (Alt+drag) */
+.f3-vn-card.f3-card-dragging { opacity: 0.35; }
+.f3-vn-card.f3-card-ghost { border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+.f3-vn-card.f3-card-drop-target {
+  outline: 2px dashed #6366f1;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+.f3-vn-card.f3-card-drop-invalid {
+  outline: 2px dashed #ef4444;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+  cursor: not-allowed;
+}
+.dark .f3-vn-card.f3-card-drop-target {
+  outline-color: #818cf8;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2);
+}
+.dark .f3-vn-card.f3-card-drop-invalid {
+  outline-color: #f87171;
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.2);
+}
+
+/* Spouse group indicator dot */
+.f3-vn-spouse-dot {
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.8);
+}
+
+/* Collapsed node indicator */
+.f3-vn-card.f3-card-collapsed {
+  border-style: dashed;
+}
+.f3-vn-collapsed-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+  line-height: 1.4;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.dark .f3-vn-collapsed-badge {
+  background: #818cf8;
+}
+
 /* Dark mode card overrides */
 .f3-vn-card.f3-card-starred {
   border-color: #f59e0b !important;
@@ -309,4 +372,89 @@
   --tree-link-step: #7c3aed;
   --tree-link-sworn: #059669;
   --tree-link-spouse: #db2777;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .f3-vn-card {
+    transition: none;
+  }
+  .f3-vn-card:hover {
+    box-shadow: none;
+  }
+  .f3 * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ── High contrast ──────────────────────────────────────────────────────── */
+@media (prefers-contrast: more) {
+  .f3-vn-card.f3-card-male {
+    background: #fff;
+    border: 2px solid #000;
+  }
+  .f3-vn-card.f3-card-female {
+    background: #fff;
+    border: 2px solid #000;
+  }
+  .f3-vn-name {
+    color: #000;
+    font-weight: 700;
+  }
+  .f3-vn-lifespan {
+    color: #333;
+  }
+  .f3 path.link {
+    stroke: #000 !important;
+    stroke-width: 2px;
+  }
+  .f3 path.link.f3-path-to-main {
+    stroke: #000 !important;
+    stroke-width: 4px;
+  }
+}
+
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  .f3-vn-card.f3-card-male,
+  .f3-vn-card.f3-card-female {
+    background: #000;
+    border: 2px solid #fff;
+  }
+  .f3-vn-name {
+    color: #fff;
+  }
+  .f3-vn-lifespan {
+    color: #ccc;
+  }
+  .f3 path.link {
+    stroke: #fff !important;
+  }
+  .f3 path.link.f3-path-to-main {
+    stroke: #fff !important;
+  }
+}
+
+/* ── Focus visible for keyboard navigation ──────────────────────────────── */
+.f3-vn-card:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+.dark .f3-vn-card:focus-visible {
+  outline-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.3);
+}
+
+/* ── Screen reader only utility ─────────────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

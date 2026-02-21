@@ -34,6 +34,18 @@ export interface FamilyChartPersonData {
   notes: string | null;
   birth_place: string | null;
   death_place: string | null;
+  birth_order: number;
+  birth_lunar_year: number | null;
+  birth_lunar_month: number | null;
+  birth_lunar_day: number | null;
+  birth_lunar_leap_month: boolean;
+  birth_calendar_type: string;
+  death_lunar_year: number | null;
+  death_lunar_month: number | null;
+  death_lunar_day: number | null;
+  death_lunar_leap_month: boolean;
+  death_calendar_type: string;
+  spouse_group: number | null;
 }
 
 /** family-chart Datum */
@@ -98,6 +110,18 @@ function buildDatum(person: Person): FamilyChartDatum {
       notes: person.notes,
       birth_place: person.birth_place,
       death_place: person.death_place,
+      birth_order: person.birth_order ?? 0,
+      birth_lunar_year: bd?.lunar_year ?? null,
+      birth_lunar_month: bd?.lunar_month ?? null,
+      birth_lunar_day: bd?.lunar_day ?? null,
+      birth_lunar_leap_month: bd?.lunar_leap_month ?? false,
+      birth_calendar_type: bd?.calendar_type ?? 'solar',
+      death_lunar_year: dd?.lunar_year ?? null,
+      death_lunar_month: dd?.lunar_month ?? null,
+      death_lunar_day: dd?.lunar_day ?? null,
+      death_lunar_leap_month: dd?.lunar_leap_month ?? false,
+      death_calendar_type: dd?.calendar_type ?? 'solar',
+      spouse_group: null,
     },
     rels: {
       parents: [],
@@ -122,9 +146,17 @@ function buildDatum(person: Person): FamilyChartDatum {
  */
 export type LinkCategory = 'biological' | 'adoptive' | 'step' | 'sworn' | 'spouse' | 'other';
 
+export interface RelationshipInfo {
+  id: number;
+  type: RelationshipType;
+  fromId: string;
+  toId: string;
+}
+
 export interface TransformResult {
   data: FamilyChartDatum[];
   linkMap: Map<string, LinkCategory>;
+  relationshipMap: Map<string, RelationshipInfo[]>;
 }
 
 function toLinkCategory(type: RelationshipType): LinkCategory {
@@ -150,6 +182,7 @@ export function transformToFamilyChart(
   }
 
   const linkMap = new Map<string, LinkCategory>();
+  const relationshipMap = new Map<string, RelationshipInfo[]>();
 
   for (const rel of relationships) {
     const fromId = String(rel.from_person.id);
@@ -160,6 +193,12 @@ export function transformToFamilyChart(
     if (!fromDatum || !toDatum) continue;
 
     linkMap.set(linkKey(fromId, toId), toLinkCategory(rel.relationship_type));
+
+    const info: RelationshipInfo = { id: rel.id, type: rel.relationship_type, fromId, toId };
+    if (!relationshipMap.has(fromId)) relationshipMap.set(fromId, []);
+    relationshipMap.get(fromId)!.push(info);
+    if (!relationshipMap.has(toId)) relationshipMap.set(toId, []);
+    relationshipMap.get(toId)!.push(info);
 
     if (PARENT_TYPES.has(rel.relationship_type)) {
       if (!toDatum.rels.parents.includes(fromId)) {
@@ -178,5 +217,49 @@ export function transformToFamilyChart(
     }
   }
 
-  return { data: Array.from(map.values()), linkMap };
+  // Build childId → Set<parentId> to determine co-parent (spouse) groups
+  const childParentsMap = new Map<string, Set<string>>();
+  for (const rel of relationships) {
+    if (PARENT_TYPES.has(rel.relationship_type)) {
+      const childId = String(rel.to_person.id);
+      const parentId = String(rel.from_person.id);
+      if (!childParentsMap.has(childId)) childParentsMap.set(childId, new Set());
+      childParentsMap.get(childId)!.add(parentId);
+    }
+  }
+
+  for (const datum of map.values()) {
+    if (datum.rels.spouses.length > 1) {
+      const groups = new Map<string, string[]>();
+      for (const childId of datum.rels.children) {
+        const parents = childParentsMap.get(childId);
+        const coParent = parents
+          ? [...parents].find((p) => p !== datum.id && datum.rels.spouses.includes(p))
+          : undefined;
+        const groupKey = coParent ?? '_unknown';
+        if (!groups.has(groupKey)) groups.set(groupKey, []);
+        groups.get(groupKey)!.push(childId);
+      }
+
+      let groupIdx = 0;
+      for (const children of groups.values()) {
+        for (const childId of children) {
+          const child = map.get(childId);
+          if (child) child.data.spouse_group = groupIdx;
+        }
+        groupIdx++;
+      }
+    }
+
+    datum.rels.children.sort((a, b) => {
+      const personA = map.get(a);
+      const personB = map.get(b);
+      const groupA = personA?.data.spouse_group ?? 0;
+      const groupB = personB?.data.spouse_group ?? 0;
+      if (groupA !== groupB) return groupA - groupB;
+      return (personA?.data.birth_order ?? 0) - (personB?.data.birth_order ?? 0);
+    });
+  }
+
+  return { data: Array.from(map.values()), linkMap, relationshipMap };
 }

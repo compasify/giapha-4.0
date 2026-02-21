@@ -104,6 +104,35 @@ export async function registerAction(
   }
 }
 
+export async function storeOAuthToken(token: string): Promise<ActionResult<AuthUser>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/validate_token`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      return { success: false, error: 'Token không hợp lệ' };
+    }
+
+    const body = await response.json();
+    const user: AuthUser = body?.data?.user;
+
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return { success: true, data: user };
+  } catch {
+    return { success: false, error: 'Không thể xác thực token' };
+  }
+}
+
 export async function logoutAction(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;

@@ -1,9 +1,16 @@
 import type { FamilyChartPersonData } from '@/lib/transforms/family-chart-transform';
 
 let _starredIds: Set<string> = new Set();
+let _collapsedIds: Set<string> = new Set();
+let _hiddenCounts: Map<string, number> = new Map();
 
 export function setStarredIds(ids: Set<string>): void {
   _starredIds = ids;
+}
+
+export function setCollapsedState(ids: Set<string>, counts: Map<string, number>): void {
+  _collapsedIds = ids;
+  _hiddenCounts = counts;
 }
 
 interface TreeDatum {
@@ -62,11 +69,14 @@ export function vietnameseCardHtml(d: TreeDatum): string {
   const hasBio = !!(data.biography || data.notes);
 
   const isStarred = _starredIds.has(d.data.id);
+  const isCollapsed = _collapsedIds.has(d.data.id);
+  const hiddenCount = _hiddenCounts.get(d.data.id) ?? 0;
 
   const genderClass = isFemale ? 'f3-card-female' : 'f3-card-male';
   const mainClass = isMain ? 'f3-card-main' : '';
   const deceasedClass = isDeceased ? 'f3-card-deceased' : '';
   const starredClass = isStarred ? 'f3-card-starred' : '';
+  const collapsedClass = isCollapsed ? 'f3-card-collapsed' : '';
 
   const avatarBg = isFemale ? '#fce7f3' : '#dbeafe';
   const avatarColor = isFemale ? '#be185d' : '#1d4ed8';
@@ -84,20 +94,41 @@ export function vietnameseCardHtml(d: TreeDatum): string {
     ? '<span class="f3-vn-star" title="Đánh dấu">&#9733;</span>'
     : '';
 
+  const collapsedBadge = isCollapsed && hiddenCount > 0
+    ? `<span class="f3-vn-collapsed-badge" title="${hiddenCount} người đang ẩn">+${hiddenCount}</span>`
+    : '';
+
+  const SPOUSE_GROUP_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6'];
+  const spouseGroupDot = data.spouse_group != null
+    ? `<span class="f3-vn-spouse-dot" style="background:${SPOUSE_GROUP_COLORS[data.spouse_group % SPOUSE_GROUP_COLORS.length]}" title="Nhóm hôn phối ${data.spouse_group + 1}"></span>`
+    : '';
+
+  const avatarUrl = data.avatar ? escapeHtml(data.avatar) : null;
+  const avatarContent = avatarUrl
+    ? `<img src="${avatarUrl}" alt="" class="f3-vn-avatar-img" />`
+    : initials;
+
+  const genderLabel = isFemale ? 'Nữ' : 'Nam';
+  const childCount = d.data.rels.children.length;
+  const hasChildren = childCount > 0;
+  const ariaLabel = `${fullName || 'Không rõ'}, ${genderLabel}, ${lifespan}${gen != null ? `, đời ${gen}` : ''}${isDeceased ? ', đã mất' : ''}${childCount > 0 ? `, ${childCount} con` : ''}`;
+
   return `
-<div class="f3-vn-card ${genderClass} ${mainClass} ${deceasedClass} ${starredClass}" data-person-id="${d.data.id}">
+<div class="f3-vn-card ${genderClass} ${mainClass} ${deceasedClass} ${starredClass} ${collapsedClass}" data-person-id="${d.data.id}" role="treeitem" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${hasChildren}">
   ${starIcon}
-  <div class="f3-vn-avatar" style="background:${avatarBg};color:${avatarColor};border-color:${avatarBorder}">
-    ${initials}
+  <div class="f3-vn-avatar" style="background:${avatarBg};color:${avatarColor};border-color:${avatarBorder}" aria-hidden="true">
+    ${avatarContent}
   </div>
   <div class="f3-vn-info">
     <div class="f3-vn-name">${fullName || '(Không rõ)'}</div>
     <div class="f3-vn-lifespan">${lifespan}</div>
   </div>
-  <div class="f3-vn-badges">
+  <div class="f3-vn-badges" aria-hidden="true">
     ${genBadge}
     ${bioIndicator}
   </div>
+  ${collapsedBadge}
+  ${spouseGroupDot}
 </div>
   `.trim();
 }

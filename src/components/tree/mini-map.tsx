@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { Map as MapIcon, X } from 'lucide-react';
+import { useRef, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { FamilyChartInstance } from './family-tree';
 
-interface MiniMapProps {
+interface MiniMapPanelProps {
   chart: FamilyChartInstance | null;
+  onClose: () => void;
 }
 
 const MAP_WIDTH = 200;
 const MAP_HEIGHT = 150;
 
-export function MiniMap({ chart }: MiniMapProps) {
-  const [expanded, setExpanded] = useState(false);
+export function MiniMapPanel({ chart, onClose }: MiniMapPanelProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -48,7 +48,6 @@ export function MiniMap({ chart }: MiniMapProps) {
     const mapScale = Math.min(scaleX, scaleY);
 
     ctx.clearRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    ctx.fillStyle = 'var(--background)' === 'var(--background)' ? '#f8fafc' : '#1e293b';
 
     const cards = svg.querySelectorAll('.card_cont');
     cards.forEach((card) => {
@@ -77,6 +76,28 @@ export function MiniMap({ chart }: MiniMapProps) {
     });
     ctx.globalAlpha = 1;
 
+    const links = svg.querySelectorAll('path.link');
+    if (links.length > 0) {
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 0.5;
+      ctx.globalAlpha = 0.4;
+      links.forEach((link) => {
+        const d = link.getAttribute('d');
+        if (!d) return;
+        const nums = d.match(/-?[\d.]+/g);
+        if (!nums || nums.length < 4) return;
+        const x1 = (parseFloat(nums[0]) - bbox.x + padding) * mapScale;
+        const y1 = (parseFloat(nums[1]) - bbox.y + padding) * mapScale;
+        const x2 = (parseFloat(nums[nums.length - 2]) - bbox.x + padding) * mapScale;
+        const y2 = (parseFloat(nums[nums.length - 1]) - bbox.y + padding) * mapScale;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    }
+
     const vpWidth = (svgRect.width / sc / contentWidth) * MAP_WIDTH;
     const vpHeight = (svgRect.height / sc / contentHeight) * MAP_HEIGHT;
     const vpX = ((-tx / sc - bbox.x + padding) / contentWidth) * MAP_WIDTH;
@@ -90,9 +111,8 @@ export function MiniMap({ chart }: MiniMapProps) {
   }, [chart]);
 
   useEffect(() => {
-    if (!expanded || !chart?.svg) return;
+    if (!chart?.svg) return;
 
-    const svg = chart.svg;
     updateMiniMap();
 
     const observer = new MutationObserver(() => {
@@ -100,7 +120,7 @@ export function MiniMap({ chart }: MiniMapProps) {
       animFrameRef.current = requestAnimationFrame(updateMiniMap);
     });
 
-    observer.observe(svg, {
+    observer.observe(chart.svg, {
       attributes: true,
       childList: true,
       subtree: true,
@@ -111,7 +131,7 @@ export function MiniMap({ chart }: MiniMapProps) {
       observer.disconnect();
       cancelAnimationFrame(animFrameRef.current);
     };
-  }, [expanded, chart, updateMiniMap]);
+  }, [chart, updateMiniMap]);
 
   function handleMiniMapClick(e: React.MouseEvent<HTMLDivElement>) {
     if (!chart?.svg) return;
@@ -147,32 +167,11 @@ export function MiniMap({ chart }: MiniMapProps) {
     });
   }
 
-  if (!expanded) {
-    return (
-      <div className="absolute bottom-[7.5rem] right-4 z-10">
-        <Button
-          variant="outline"
-          size="icon-sm"
-          onClick={() => setExpanded(true)}
-          title="Bản đồ thu nhỏ"
-          className="bg-background/80 backdrop-blur-sm"
-        >
-          <MapIcon className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="absolute bottom-[7.5rem] right-4 z-10 rounded-lg border bg-background/90 backdrop-blur-sm shadow-md overflow-hidden">
+    <div className="rounded-lg border bg-background/90 backdrop-blur-sm shadow-md overflow-hidden mb-1">
       <div className="flex items-center justify-between px-2 py-1 border-b">
         <span className="text-[10px] font-medium text-muted-foreground">Bản đồ</span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setExpanded(false)}
-          className="h-5 w-5"
-        >
+        <Button variant="ghost" size="icon-sm" onClick={onClose} className="h-5 w-5">
           <X className="h-3 w-3" />
         </Button>
       </div>
@@ -181,12 +180,7 @@ export function MiniMap({ chart }: MiniMapProps) {
         style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
         onClick={handleMiniMapClick}
       >
-        <canvas
-          ref={canvasRef}
-          width={MAP_WIDTH}
-          height={MAP_HEIGHT}
-          className="block"
-        />
+        <canvas ref={canvasRef} width={MAP_WIDTH} height={MAP_HEIGHT} className="block" />
         <div
           ref={viewportRef}
           className="absolute border-2 border-blue-500/60 bg-blue-500/10 pointer-events-none rounded-sm"
