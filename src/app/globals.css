@@ -310,6 +310,75 @@
   border: 1px solid rgba(255,255,255,0.8);
 }
 
+/* Action icons (edit / add person) — shown on hover */
+.f3-vn-actions {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+.f3-vn-card:hover .f3-vn-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+.f3-vn-card.f3-card-main .f3-vn-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: none) {
+  .f3-vn-actions {
+    opacity: 0.7;
+    pointer-events: auto;
+  }
+}
+.f3-vn-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.f3-vn-action-btn:hover {
+  background: #3b82f6;
+  color: white;
+  transform: scale(1.15);
+}
+.f3-vn-action-btn:active {
+  transform: scale(0.92);
+}
+.f3-vn-action-btn[data-action="add"]:hover {
+  background: #22c55e;
+}
+.f3-vn-action-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
+.dark .f3-vn-action-btn {
+  background: rgba(30, 30, 30, 0.9);
+  color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.dark .f3-vn-action-btn:hover {
+  background: #3b82f6;
+  color: white;
+}
+.dark .f3-vn-action-btn[data-action="add"]:hover {
+  background: #22c55e;
+}
+
 /* Collapsed node indicator */
 .f3-vn-card.f3-card-collapsed {
   border-style: dashed;
@@ -381,6 +450,12 @@
   }
   .f3-vn-card:hover {
     box-shadow: none;
+  }
+  .f3-vn-action-btn {
+    transition: none;
+  }
+  .f3-vn-actions {
+    transition: none;
   }
   .f3 * {
     transition: none !important;

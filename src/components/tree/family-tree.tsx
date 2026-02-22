@@ -39,6 +39,7 @@ interface F3Chart extends FamilyChartInstance {
   setCardHtml: () => F3Card;
   setSingleParentEmptyCard: (show: boolean) => F3Chart;
   setSortChildrenFunction: (fn: (a: { data: Record<string, unknown> }, b: { data: Record<string, unknown> }) => number) => F3Chart;
+  setDuplicateBranchToggle: (show: boolean) => F3Chart;
   editTree: () => unknown;
 }
 
@@ -53,12 +54,33 @@ function sortByBirthOrder(a: { data: Record<string, unknown> }, b: { data: Recor
   return orderA - orderB;
 }
 
+// family-chart mutates rels arrays in-place — clone to protect React state
+function cloneChartData(data: FamilyChartDatum[]): FamilyChartDatum[] {
+  return data.map((d) => ({
+    ...d,
+    data: { ...d.data },
+    rels: {
+      parents: [...d.rels.parents],
+      spouses: [...d.rels.spouses],
+      children: [...d.rels.children],
+    },
+  }));
+}
+
+function dataStructureKey(data: FamilyChartDatum[]): string {
+  return data
+    .map((d) => `${d.id}:${d.rels.parents.join(',')};${d.rels.spouses.join(',')};${d.rels.children.join(',')}`)
+    .sort()
+    .join('|');
+}
+
 export function FamilyTree({ data, linkMap, onPersonClick, onPersonDoubleClick, onChartReady, onEditReady }: FamilyTreeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<FamilyChartInstance | null>(null);
   const linkObserverCleanupRef = useRef<(() => void) | null>(null);
   const f3ModuleRef = useRef<F3Module | null>(null);
   const editTreeRef = useRef<EditTreeInstance | null>(null);
+  const renderedStructureKeyRef = useRef<string>('');
 
   const onPersonClickRef = useRef(onPersonClick);
   onPersonClickRef.current = onPersonClick;
@@ -74,10 +96,23 @@ export function FamilyTree({ data, linkMap, onPersonClick, onPersonDoubleClick, 
   useEffect(() => {
     if (!data || data.length === 0) return;
 
+    const newKey = dataStructureKey(data);
+
     if (chartRef.current) {
-      chartRef.current.updateData(data);
-      chartRef.current.updateTree({ tree_position: 'inherit' });
-      return;
+      const structureChanged = newKey !== renderedStructureKeyRef.current;
+
+      if (structureChanged) {
+        linkObserverCleanupRef.current?.();
+        linkObserverCleanupRef.current = null;
+        editTreeRef.current?.destroy();
+        editTreeRef.current = null;
+        if (containerRef.current) containerRef.current.innerHTML = '';
+        chartRef.current = null;
+      } else {
+        chartRef.current.updateData(cloneChartData(data));
+        chartRef.current.updateTree({ tree_position: 'inherit' });
+        return;
+      }
     }
 
     if (!containerRef.current) return;
@@ -85,6 +120,7 @@ export function FamilyTree({ data, linkMap, onPersonClick, onPersonDoubleClick, 
 
     if (f3ModuleRef.current) {
       createChart(f3ModuleRef.current, container, data);
+      renderedStructureKeyRef.current = newKey;
       return;
     }
 
@@ -95,6 +131,7 @@ export function FamilyTree({ data, linkMap, onPersonClick, onPersonDoubleClick, 
       f3ModuleRef.current = f3;
       if (!chartRef.current && containerRef.current) {
         createChart(f3, containerRef.current, data);
+        renderedStructureKeyRef.current = newKey;
       }
     });
 
@@ -103,8 +140,9 @@ export function FamilyTree({ data, linkMap, onPersonClick, onPersonDoubleClick, 
   }, [data]);
 
   function createChart(f3: F3Module, container: HTMLElement, chartData: FamilyChartDatum[]) {
-    const chart = f3.createChart(container, chartData);
+    const chart = f3.createChart(container, cloneChartData(chartData));
     chart.setSingleParentEmptyCard(false);
+    chart.setDuplicateBranchToggle(true);
     chart.setSortChildrenFunction(sortByBirthOrder);
     chartRef.current = chart;
 

@@ -31,6 +31,7 @@ interface EmptyTreeStateProps {
 export function EmptyTreeState({ onCreateRoot }: EmptyTreeStateProps) {
   const [open, setOpen] = useState(false);
   const [ho, setHo] = useState('');
+  const [tenDem, setTenDem] = useState('');
   const [ten, setTen] = useState('');
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,10 +42,11 @@ export function EmptyTreeState({ onCreateRoot }: EmptyTreeStateProps) {
 
     setIsSubmitting(true);
     try {
-      await onCreateRoot({ ho: ho.trim(), ten: ten.trim(), gender });
+      await onCreateRoot({ ho: ho.trim(), ten_dem: tenDem.trim(), ten: ten.trim(), gender });
       toast.success('Đã thêm tổ tiên đầu tiên');
       setOpen(false);
       setHo('');
+      setTenDem('');
       setTen('');
       setGender('male');
     } catch (err) {
@@ -79,25 +81,37 @@ export function EmptyTreeState({ onCreateRoot }: EmptyTreeStateProps) {
             </DialogHeader>
 
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="root-ho">Họ</Label>
-                <Input
-                  id="root-ho"
-                  value={ho}
-                  onChange={(e) => setHo(e.target.value)}
-                  placeholder="Ví dụ: Nguyễn Văn"
-                />
-              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="root-ho">Họ</Label>
+                  <Input
+                    id="root-ho"
+                    value={ho}
+                    onChange={(e) => setHo(e.target.value)}
+                    placeholder="Nguyễn"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="root-ten">Tên *</Label>
-                <Input
-                  id="root-ten"
-                  value={ten}
-                  onChange={(e) => setTen(e.target.value)}
-                  placeholder="Ví dụ: Tổ"
-                  required
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="root-ten-dem">Tên đệm</Label>
+                  <Input
+                    id="root-ten-dem"
+                    value={tenDem}
+                    onChange={(e) => setTenDem(e.target.value)}
+                    placeholder="Văn"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="root-ten">Tên *</Label>
+                  <Input
+                    id="root-ten"
+                    value={ten}
+                    onChange={(e) => setTen(e.target.value)}
+                    placeholder="Tổ"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

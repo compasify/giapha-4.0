@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Trash2, UserPlus, Star, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { resizeImageToBase64 } from '@/lib/utils/resize-image';
-import type { FamilyChartPersonData } from '@/lib/transforms/family-chart-transform';
+import type { FamilyChartPersonData, FamilyChartDatum } from '@/lib/transforms/family-chart-transform';
 import { ChildOrderSection } from '@/components/tree/child-order-section';
 import { DateInputSection } from '@/components/tree/date-input-section';
+import { PersonSearchSelect } from '@/components/tree/person-search-select';
+import { canLinkAsSpouse } from '@/lib/utils/validate-spouse-link';
 import { lunarToSolar } from '@/lib/api/lunar-converter';
+import type { LinkExistingSpousePayload } from '@/app/(app)/lineage/[id]/tree-view-helpers';
+import { ParentsSection } from '@/components/tree/parents-section';
+import type { SetParentPayload, RemoveParentPayload } from '@/components/tree/parents-section';
+import type { RelationshipInfo } from '@/lib/transforms/family-chart-transform';
 
 export type RelativeType = 'father' | 'mother' | 'spouse' | 'son' | 'daughter';
 
@@ -69,6 +75,8 @@ export interface AddRelativePayload {
   relativeType: RelativeType;
   spouseRelationType?: SpouseRelationType;
   parentRelationType?: ParentRelationType;
+  coParentId?: string;
+  sharedChildIds?: string[];
   values: EditSidebarFormValues;
 }
 
@@ -92,6 +100,11 @@ interface EditSidebarProps {
   onAddRelativeClick?: () => void;
   childrenOfPerson?: ChildInfo[];
   onReorderChildren?: (orderedChildIds: string[]) => Promise<void>;
+  onLinkExistingSpouse?: (payload: LinkExistingSpousePayload) => Promise<void>;
+  treeData?: FamilyChartDatum[];
+  relationshipMap?: Map<string, RelationshipInfo[]>;
+  onSetParent?: (payload: SetParentPayload) => Promise<void>;
+  onRemoveParent?: (payload: RemoveParentPayload) => Promise<void>;
 }
 
 function emptyFormValues(): EditSidebarFormValues {
@@ -156,6 +169,11 @@ export function EditSidebar({
   onAddRelativeClick,
   childrenOfPerson,
   onReorderChildren,
+  onLinkExistingSpouse,
+  treeData,
+  relationshipMap,
+  onSetParent,
+  onRemoveParent,
 }: EditSidebarProps) {
   const [values, setValues] = useState<EditSidebarFormValues>(() =>
     toFormValues(person?.data ?? null)
@@ -166,7 +184,37 @@ export function EditSidebar({
   const [parentRelType, setParentRelType] = useState<ParentRelationType>('biological_parent');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [spouseMode, setSpouseMode] = useState<'create' | 'link'>('create');
+  const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null);
+  const [selectedCoParentId, setSelectedCoParentId] = useState<string | null>(null);
+  const [sharedChildIds, setSharedChildIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const personSpouses = useMemo(() => {
+    if (!person || !treeData) return [];
+    const datum = treeData.find((d) => d.id === person.id);
+    if (!datum) return [];
+    return datum.rels.spouses
+      .map((sid) => {
+        const sp = treeData.find((d) => d.id === sid);
+        if (!sp) return null;
+        return { id: sp.id, name: [sp.data.ho, sp.data.ten_dem, sp.data.ten].filter(Boolean).join(' ') || '(Không rõ)' };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+  }, [person, treeData]);
+
+  const personChildren = useMemo(() => {
+    if (!person || !treeData) return [];
+    const datum = treeData.find((d) => d.id === person.id);
+    if (!datum) return [];
+    return datum.rels.children
+      .map((cid) => {
+        const child = treeData.find((d) => d.id === cid);
+        if (!child) return null;
+        return { id: child.id, name: [child.data.ho, child.data.ten_dem, child.data.ten].filter(Boolean).join(' ') || '(Không rõ)' };
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+  }, [person, treeData]);
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -193,11 +241,28 @@ export function EditSidebar({
       setIsAlive(true);
     }
     setError(null);
-  }, [person, mode]);
+    setSpouseMode('create');
+    setSelectedExistingId(null);
+    setSelectedCoParentId(personSpouses.length > 0 ? personSpouses[0].id : null);
+    setSharedChildIds(new Set(personChildren.map((c) => c.id)));
+  }, [person, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (relativeType) setNewRelType(relativeType);
   }, [relativeType]);
+
+  useEffect(() => {
+    if (mode !== 'new') return;
+    if (newRelType === 'daughter' || newRelType === 'mother') {
+      setValues((prev) => ({ ...prev, gender: 'F' }));
+    } else if (newRelType === 'son' || newRelType === 'father') {
+      setValues((prev) => ({ ...prev, gender: 'M' }));
+    }
+  }, [newRelType, mode]);
+
+  useEffect(() => {
+    setSelectedExistingId(null);
+  }, [spouseMode]);
 
   function handleChange(field: keyof EditSidebarFormValues, val: string | boolean) {
     setValues((prev) => ({ ...prev, [field]: val }));
@@ -236,19 +301,32 @@ export function EditSidebar({
     setIsLoading(true);
     setError(null);
     try {
-      const converted = await convertLunarIfNeeded({ ...values, is_alive: isAlive });
-      const payload: EditSidebarFormValues = converted;
-      if (mode === 'edit') {
-        await onSave(person.id, payload);
-      } else {
-        const isParentChild = ['father', 'mother', 'son', 'daughter'].includes(newRelType);
-        await onAddRelative({
+      if (mode === 'new' && newRelType === 'spouse' && spouseMode === 'link') {
+        if (!selectedExistingId || !onLinkExistingSpouse) return;
+        await onLinkExistingSpouse({
           personId: person.id,
-          relativeType: newRelType,
-          spouseRelationType: newRelType === 'spouse' ? spouseRelType : undefined,
-          parentRelationType: isParentChild ? parentRelType : undefined,
-          values: payload,
+          existingSpouseId: selectedExistingId,
+          spouseRelationType: spouseRelType,
         });
+      } else {
+        const converted = await convertLunarIfNeeded({ ...values, is_alive: isAlive });
+        const payload: EditSidebarFormValues = converted;
+        if (mode === 'edit') {
+          await onSave(person.id, payload);
+        } else {
+          const isParentChild = ['father', 'mother', 'son', 'daughter'].includes(newRelType);
+          const isChild = newRelType === 'son' || newRelType === 'daughter';
+          const isSpouse = newRelType === 'spouse';
+          await onAddRelative({
+            personId: person.id,
+            relativeType: newRelType,
+            spouseRelationType: isSpouse ? spouseRelType : undefined,
+            parentRelationType: isParentChild ? parentRelType : undefined,
+            coParentId: isChild && selectedCoParentId ? selectedCoParentId : undefined,
+            sharedChildIds: isSpouse && sharedChildIds.size > 0 ? [...sharedChildIds] : undefined,
+            values: payload,
+          });
+        }
       }
       onOpenChange(false);
     } catch (e) {
@@ -317,19 +395,87 @@ export function EditSidebar({
                 </Select>
               </div>
               {newRelType === 'spouse' && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Loại hôn nhân</Label>
-                  <Select value={spouseRelType} onValueChange={(v) => setSpouseRelType(v as SpouseRelationType)}>
-                    <SelectTrigger size="sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="spouse_married">Vợ/Chồng chính thức</SelectItem>
-                      <SelectItem value="concubine">Thiếp</SelectItem>
-                      <SelectItem value="partner">Bạn đời</SelectItem>
-                      <SelectItem value="spouse_divorced">Đã ly hôn</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Loại hôn nhân</Label>
+                    <Select value={spouseRelType} onValueChange={(v) => setSpouseRelType(v as SpouseRelationType)}>
+                      <SelectTrigger size="sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="spouse_married">Vợ/Chồng chính thức</SelectItem>
+                        <SelectItem value="concubine">Thiếp</SelectItem>
+                        <SelectItem value="partner">Bạn đời</SelectItem>
+                        <SelectItem value="spouse_divorced">Đã ly hôn</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {onLinkExistingSpouse && treeData && (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Cách thêm</Label>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            className={`flex-1 text-xs py-1.5 rounded-md border transition-colors ${
+                              spouseMode === 'create'
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-muted hover:bg-accent border-transparent'
+                            }`}
+                            onClick={() => setSpouseMode('create')}
+                          >
+                            Tạo người mới
+                          </button>
+                          <button
+                            type="button"
+                            className={`flex-1 text-xs py-1.5 rounded-md border transition-colors ${
+                              spouseMode === 'link'
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-muted hover:bg-accent border-transparent'
+                            }`}
+                            onClick={() => setSpouseMode('link')}
+                          >
+                            Liên kết người đã có
+                          </button>
+                        </div>
+                      </div>
+                      {spouseMode === 'link' && person && (
+                        <PersonSearchSelect
+                          persons={treeData}
+                          currentPersonId={person.id}
+                          selectedId={selectedExistingId}
+                          onSelect={setSelectedExistingId}
+                          validateCandidate={(cid) => canLinkAsSpouse(person.id, cid, treeData)}
+                          placeholder="Nhập tên để tìm..."
+                        />
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+              {newRelType === 'spouse' && spouseMode === 'create' && personChildren.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Con chung</Label>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {personChildren.map((child) => (
+                      <label key={child.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-accent rounded px-1 py-0.5">
+                        <input
+                          type="checkbox"
+                          className="h-3.5 w-3.5 rounded border accent-primary"
+                          checked={sharedChildIds.has(child.id)}
+                          onChange={(e) => {
+                            setSharedChildIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(child.id);
+                              else next.delete(child.id);
+                              return next;
+                            });
+                          }}
+                        />
+                        {child.name}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
               {['father', 'mother', 'son', 'daughter'].includes(newRelType) && (
@@ -350,9 +496,30 @@ export function EditSidebar({
                   </Select>
                 </div>
               )}
+              {(newRelType === 'son' || newRelType === 'daughter') && personSpouses.length >= 1 && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Con chung với</Label>
+                  <Select
+                    value={selectedCoParentId ?? '_none'}
+                    onValueChange={(v) => setSelectedCoParentId(v === '_none' ? null : v)}
+                  >
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Không (con riêng)</SelectItem>
+                      {personSpouses.map((sp) => (
+                        <SelectItem key={sp.id} value={sp.id}>{sp.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </>
           )}
 
+          {!(mode === 'new' && newRelType === 'spouse' && spouseMode === 'link') && (
+          <>
           <div className="flex justify-center">
             <button
               type="button"
@@ -495,6 +662,18 @@ export function EditSidebar({
               onCalendarTypeChange={(type) => handleChange('death_calendar_type', type)}
             />
           )}
+          </>
+          )}
+
+          {mode === 'edit' && person && treeData && relationshipMap && onSetParent && onRemoveParent && (
+            <ParentsSection
+              personId={person.id}
+              treeData={treeData}
+              relationshipMap={relationshipMap}
+              onSetParent={onSetParent}
+              onRemoveParent={onRemoveParent}
+            />
+          )}
 
           {mode === 'edit' && childrenOfPerson && onReorderChildren && childrenOfPerson.length >= 2 && (
             <ChildOrderSection children={childrenOfPerson} onReorder={onReorderChildren} />
@@ -557,9 +736,18 @@ export function EditSidebar({
               size="sm"
               className="flex-1"
               onClick={handleSave}
-              disabled={isLoading || !values.ten.trim()}
+              disabled={
+                isLoading ||
+                (mode === 'new' && newRelType === 'spouse' && spouseMode === 'link'
+                  ? !selectedExistingId
+                  : !values.ten.trim())
+              }
             >
-              {isLoading ? 'Đang lưu...' : 'Lưu'}
+              {isLoading
+                ? 'Đang lưu...'
+                : mode === 'new' && newRelType === 'spouse' && spouseMode === 'link'
+                  ? 'Liên kết'
+                  : 'Lưu'}
             </Button>
           </div>
         </div>

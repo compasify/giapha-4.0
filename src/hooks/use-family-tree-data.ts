@@ -23,7 +23,7 @@ export function useFamilyTreeData(lineageId: number) {
     queryFn: async () => {
       const [personsRes, relsRes] = await Promise.all([
         proxyFetch<ApiResponse<Person[]>>(`/lineages/${lineageId}/persons?per_page=500`),
-        proxyFetch<ApiResponse<Relationship[]>>(`/lineages/${lineageId}/relationships`),
+        proxyFetch<ApiResponse<Relationship[]>>(`/lineages/${lineageId}/relationships?per_page=500`),
       ]);
       return transformToFamilyChart(personsRes.data, relsRes.data);
     },

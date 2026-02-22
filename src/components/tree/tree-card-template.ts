@@ -56,6 +56,14 @@ function getInitials(data: FamilyChartPersonData): string {
   return (ho + ten).toUpperCase() || '?';
 }
 
+function editIconSvg(): string {
+  return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
+}
+
+function addPersonIconSvg(): string {
+  return '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
+}
+
 export function vietnameseCardHtml(d: TreeDatum): string {
   const data = d.data.data;
   const isMain = data.main === true;
@@ -113,6 +121,14 @@ export function vietnameseCardHtml(d: TreeDatum): string {
   const hasChildren = childCount > 0;
   const ariaLabel = `${fullName || 'Không rõ'}, ${genderLabel}, ${lifespan}${gen != null ? `, đời ${gen}` : ''}${isDeceased ? ', đã mất' : ''}${childCount > 0 ? `, ${childCount} con` : ''}`;
 
+  // Defensive: skip action icons on placeholder cards (add-relative flow)
+  const isPlaceholder = !!((d.data as unknown as Record<string, unknown>)._new_rel_data);
+  const actionsHtml = isPlaceholder ? '' : `
+  <div class="f3-vn-actions" aria-label="Thao tác">
+    <button class="f3-vn-action-btn" data-action="edit" title="Sửa thông tin" aria-label="Sửa">${editIconSvg()}</button>
+    <button class="f3-vn-action-btn" data-action="add" title="Thêm người thân" aria-label="Thêm">${addPersonIconSvg()}</button>
+  </div>`;
+
   return `
 <div class="f3-vn-card ${genderClass} ${mainClass} ${deceasedClass} ${starredClass} ${collapsedClass}" data-person-id="${d.data.id}" role="treeitem" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${hasChildren}">
   ${starIcon}
@@ -129,6 +145,7 @@ export function vietnameseCardHtml(d: TreeDatum): string {
   </div>
   ${collapsedBadge}
   ${spouseGroupDot}
+  ${actionsHtml}
 </div>
   `.trim();
 }

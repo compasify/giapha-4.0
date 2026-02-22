@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { EditSidebarFormValues, AddRelativePayload, ParentRelationType, CalendarType } from '@/components/tree/edit-sidebar';
+import type { EditSidebarFormValues, AddRelativePayload, ParentRelationType, SpouseRelationType, CalendarType } from '@/components/tree/edit-sidebar';
+import type { SetParentPayload, RemoveParentPayload } from '@/components/tree/parents-section';
 
 const PROXY = '/api/proxy';
 
@@ -101,11 +102,17 @@ function personPayload(values: EditSidebarFormValues) {
   };
 }
 
+export interface LinkExistingSpousePayload {
+  personId: string;
+  existingSpouseId: string;
+  spouseRelationType: SpouseRelationType;
+}
+
 export function useTreeCrud(lineageId: number) {
   const queryClient = useQueryClient();
 
-  const invalidateTree = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+  const invalidateTree = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
   }, [queryClient, lineageId]);
 
   const handleSave = useCallback(async (personId: string, values: EditSidebarFormValues) => {
@@ -113,16 +120,16 @@ export function useTreeCrud(lineageId: number) {
       method: 'PATCH',
       body: JSON.stringify(personPayload(values)),
     });
-    invalidateTree();
+    await invalidateTree();
   }, [invalidateTree]);
 
   const handleDelete = useCallback(async (personId: string) => {
     await proxyFetch(`/persons/${personId}`, { method: 'DELETE' });
-    invalidateTree();
+    await invalidateTree();
   }, [invalidateTree]);
 
   const handleAddRelative = useCallback(async (payload: AddRelativePayload) => {
-    const { personId, relativeType, spouseRelationType, parentRelationType, values } = payload;
+    const { personId, relativeType, spouseRelationType, parentRelationType, coParentId, sharedChildIds, values } = payload;
 
     const newPersonRes = await proxyFetch<{ data: { id: number } }>(
       `/lineages/${lineageId}/persons`,
@@ -152,10 +159,62 @@ export function useTreeCrud(lineageId: number) {
       }),
     });
 
-    invalidateTree();
+    // Auto-link child to co-parent (spouse) when adding son/daughter
+    if ((relativeType === 'son' || relativeType === 'daughter') && coParentId) {
+      await proxyFetch(`/lineages/${lineageId}/relationships`, {
+        method: 'POST',
+        body: JSON.stringify({
+          relationship: {
+            from_person_id: parseInt(coParentId, 10),
+            to_person_id: parseInt(newId, 10),
+            relationship_type: parentRelationType ?? 'biological_parent',
+            lineage_id: lineageId,
+          },
+        }),
+      });
+    }
+
+    // Link existing children as shared children of the new spouse
+    if (relativeType === 'spouse' && sharedChildIds && sharedChildIds.length > 0) {
+      await Promise.all(
+        sharedChildIds.map((childId) =>
+          proxyFetch(`/lineages/${lineageId}/relationships`, {
+            method: 'POST',
+            body: JSON.stringify({
+              relationship: {
+                from_person_id: parseInt(newId, 10),
+                to_person_id: parseInt(childId, 10),
+                relationship_type: 'biological_parent',
+                lineage_id: lineageId,
+              },
+            }),
+          })
+        )
+      );
+    }
+
+    await invalidateTree();
   }, [lineageId, invalidateTree]);
 
-  return { handleSave, handleDelete, handleAddRelative };
+  const handleLinkExistingSpouse = useCallback(async (payload: LinkExistingSpousePayload) => {
+    const { personId, existingSpouseId, spouseRelationType } = payload;
+
+    await proxyFetch(`/lineages/${lineageId}/relationships`, {
+      method: 'POST',
+      body: JSON.stringify({
+        relationship: {
+          from_person_id: parseInt(personId, 10),
+          to_person_id: parseInt(existingSpouseId, 10),
+          relationship_type: spouseRelationType,
+          lineage_id: lineageId,
+        },
+      }),
+    });
+
+    await invalidateTree();
+  }, [lineageId, invalidateTree]);
+
+  return { handleSave, handleDelete, handleAddRelative, handleLinkExistingSpouse };
 }
 
 export function useReorderChildren(lineageId: number) {
@@ -195,12 +254,13 @@ export function useReparent(lineageId: number) {
         },
       }),
     });
-    queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
   }, [lineageId, queryClient]);
 }
 
 export interface RootPersonPayload {
   ho: string;
+  ten_dem: string;
   ten: string;
   gender: 'male' | 'female';
 }
@@ -212,10 +272,44 @@ export function useCreateRootPerson(lineageId: number) {
     await proxyFetch(`/lineages/${lineageId}/persons`, {
       method: 'POST',
       body: JSON.stringify({
-        person: { ...payload, is_alive: false },
+        person: {
+          ho: payload.ho || null,
+          ten_dem: payload.ten_dem || null,
+          ten: payload.ten,
+          gender: payload.gender,
+          is_alive: false,
+        },
       }),
     });
-    queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+  }, [lineageId, queryClient]);
+}
+
+export function useSetParent(lineageId: number) {
+  const queryClient = useQueryClient();
+
+  return useCallback(async (payload: SetParentPayload) => {
+    await proxyFetch(`/lineages/${lineageId}/relationships`, {
+      method: 'POST',
+      body: JSON.stringify({
+        relationship: {
+          from_person_id: parseInt(payload.parentId, 10),
+          to_person_id: parseInt(payload.childId, 10),
+          relationship_type: payload.relationType,
+          lineage_id: lineageId,
+        },
+      }),
+    });
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+  }, [lineageId, queryClient]);
+}
+
+export function useRemoveParent(lineageId: number) {
+  const queryClient = useQueryClient();
+
+  return useCallback(async (payload: RemoveParentPayload) => {
+    await proxyFetch(`/relationships/${payload.relationshipId}`, { method: 'DELETE' });
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
   }, [lineageId, queryClient]);
 }
 
@@ -246,6 +340,6 @@ export function useAddAncestor(lineageId: number) {
       }),
     });
 
-    queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
+    await queryClient.invalidateQueries({ queryKey: ['family-tree', lineageId] });
   }, [lineageId, queryClient]);
 }

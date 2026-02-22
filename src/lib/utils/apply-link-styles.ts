@@ -9,8 +9,6 @@ const LINK_CLASSES = [
   'link-other',
 ] as const;
 
-const STRAIGHTENED_ATTR = 'data-straightened';
-
 function linkKey(a: string, b: string): string {
   return a < b ? `${a}_${b}` : `${b}_${a}`;
 }
@@ -33,37 +31,14 @@ function getNodeId(node: D3Node | undefined): string | null {
   return null;
 }
 
-function straightenPath(d: string): string {
-  const nums = d.match(/-?[\d.]+/g);
-  if (!nums || nums.length < 4) return d;
-
-  const x1 = parseFloat(nums[0]);
-  const y1 = parseFloat(nums[1]);
-  const x2 = parseFloat(nums[nums.length - 2]);
-  const y2 = parseFloat(nums[nums.length - 1]);
-
-  const midY = (y1 + y2) / 2;
-  return `M${x1},${y1} L${x1},${midY} L${x2},${midY} L${x2},${y2}`;
-}
-
 export function applyLinkStyles(
   svgEl: SVGElement | null | undefined,
   linkMap: Map<string, LinkCategory>
 ): void {
-  if (!svgEl) return;
+  if (!svgEl || linkMap.size === 0) return;
 
   const paths = svgEl.querySelectorAll('path.link');
   paths.forEach((path) => {
-    if (!path.hasAttribute(STRAIGHTENED_ATTR)) {
-      const d = path.getAttribute('d');
-      if (d) {
-        path.setAttribute('d', straightenPath(d));
-        path.setAttribute(STRAIGHTENED_ATTR, '1');
-      }
-    }
-
-    if (linkMap.size === 0) return;
-
     for (const cls of LINK_CLASSES) {
       path.classList.remove(cls);
     }
@@ -101,18 +76,13 @@ export function observeLinkStyles(
   process();
 
   const observer = new MutationObserver((mutations) => {
-    const hasNewPaths = mutations.some((m) =>
-      m.type === 'childList' ||
-      (m.type === 'attributes' && !(m.target as Element).hasAttribute(STRAIGHTENED_ATTR))
-    );
-    if (hasNewPaths) process();
+    const hasRelevantChange = mutations.some((m) => m.type === 'childList');
+    if (hasRelevantChange) process();
   });
 
   observer.observe(svgEl, {
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['d'],
   });
 
   return () => observer.disconnect();

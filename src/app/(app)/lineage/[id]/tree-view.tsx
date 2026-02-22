@@ -26,7 +26,7 @@ import Link from 'next/link';
 import { useFamilyTreeData } from '@/hooks/use-family-tree-data';
 import { useLineage } from '@/hooks/use-lineages';
 import type { EditTreeInstance } from '@/components/tree/tree-edit-integration';
-import { useTreeCrud, useAddAncestor, useReorderChildren, useReparent, useCreateRootPerson } from './tree-view-helpers';
+import { useTreeCrud, useAddAncestor, useReorderChildren, useReparent, useCreateRootPerson, useSetParent, useRemoveParent } from './tree-view-helpers';
 import { EmptyTreeState } from '@/components/tree/empty-tree-state';
 import { useTreeDragDrop } from '@/hooks/use-tree-drag-drop';
 import { ReparentConfirmDialog } from '@/components/tree/reparent-confirm-dialog';
@@ -56,11 +56,13 @@ export function TreeView({ lineageId }: TreeViewProps) {
   const treeData = useMemo(() => transformResult?.data ?? [], [transformResult]);
   const linkMap = useMemo(() => transformResult?.linkMap ?? new Map(), [transformResult]);
   const relationshipMap = useMemo(() => transformResult?.relationshipMap ?? new Map(), [transformResult]);
-  const { handleSave, handleDelete, handleAddRelative } = useTreeCrud(lineageId);
+  const { handleSave, handleDelete, handleAddRelative, handleLinkExistingSpouse } = useTreeCrud(lineageId);
   const handleAddAncestor = useAddAncestor(lineageId);
   const handleReorderChildren = useReorderChildren(lineageId);
   const handleReparent = useReparent(lineageId);
   const handleCreateRoot = useCreateRootPerson(lineageId);
+  const handleSetParent = useSetParent(lineageId);
+  const handleRemoveParent = useRemoveParent(lineageId);
   const [chart, setChart] = useState<FamilyChartInstance | null>(null);
   const [editTree, setEditTree] = useState<EditTreeInstance | null>(null);
   const editTreeRef = useRef<EditTreeInstance | null>(null);
@@ -69,6 +71,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarPerson, setSidebarPerson] = useState<EditSidebarPerson | null>(null);
   const [sidebarMode, setSidebarMode] = useState<'edit' | 'new'>('edit');
+  const [sidebarRelativeType, setSidebarRelativeType] = useState<'father' | 'mother' | 'spouse' | 'son' | 'daughter' | undefined>(undefined);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -181,6 +184,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
     if (datum) {
       setSidebarPerson({ id: datum.id, data: datum.data });
       setSidebarMode('edit');
+      setSidebarRelativeType(undefined);
       setSidebarOpen(true);
     }
   }, [chart, treeData]);
@@ -260,6 +264,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
         if (datum) {
           setSidebarPerson({ id: datum.id, data: datum.data });
           setSidebarMode('edit');
+          setSidebarRelativeType(undefined);
           setSidebarOpen(true);
         }
       }
@@ -292,6 +297,44 @@ export function TreeView({ lineageId }: TreeViewProps) {
     return () => el.removeEventListener('contextmenu', handleContextMenu);
   }, [treeData]);
 
+  const chartRef = useRef(chart);
+  chartRef.current = chart;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    function handleActionClick(e: MouseEvent) {
+      const btn = (e.target as HTMLElement).closest('.f3-vn-action-btn') as HTMLElement | null;
+      if (!btn) return;
+
+      e.stopPropagation();
+      e.preventDefault();
+
+      const action = btn.getAttribute('data-action');
+      const card = btn.closest('.f3-vn-card') as HTMLElement | null;
+      const personId = card?.getAttribute('data-person-id');
+      if (!personId || !action) return;
+
+      const datum = treeData.find((d) => d.id === personId);
+      if (!datum) return;
+
+      if (chartRef.current) {
+        chartRef.current.updateMainId(personId);
+        chartRef.current.updateTree({ tree_position: 'main_to_middle' });
+      }
+
+      setSidebarPerson({ id: datum.id, data: datum.data });
+      const isNew = action === 'add';
+      setSidebarMode(isNew ? 'new' : 'edit');
+      setSidebarRelativeType(isNew ? 'son' : undefined);
+      setSidebarOpen(true);
+    }
+
+    el.addEventListener('click', handleActionClick, true);
+    return () => el.removeEventListener('click', handleActionClick, true);
+  }, [treeData]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -299,6 +342,10 @@ export function TreeView({ lineageId }: TreeViewProps) {
     let longPressTimer: ReturnType<typeof setTimeout> | null = null;
     let lastTapTime = 0;
     let lastTapId = '';
+
+    function isActionBtn(target: EventTarget | null): boolean {
+      return !!(target as HTMLElement)?.closest?.('.f3-vn-action-btn');
+    }
 
     function findPersonId(target: EventTarget | null): string | null {
       let node = target as HTMLElement | null;
@@ -311,6 +358,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
 
     function handleTouchStart(e: TouchEvent) {
       if (e.touches.length !== 1) return;
+      if (isActionBtn(e.target)) return;
       const pid = findPersonId(e.target);
       if (!pid) return;
 
@@ -320,6 +368,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
         if (datum) {
           setSidebarPerson({ id: datum.id, data: datum.data });
           setSidebarMode('edit');
+          setSidebarRelativeType(undefined);
           setSidebarOpen(true);
         }
       }, 500);
@@ -327,6 +376,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
 
     function handleTouchEnd(e: TouchEvent) {
       if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      if (isActionBtn(e.target)) return;
 
       const pid = findPersonId(e.target);
       if (!pid) return;
@@ -367,11 +417,13 @@ export function TreeView({ lineageId }: TreeViewProps) {
         case 'add-child':
           setSidebarPerson({ id: datum.id, data: datum.data });
           setSidebarMode('new');
+          setSidebarRelativeType('son');
           setSidebarOpen(true);
           break;
         case 'add-spouse':
           setSidebarPerson({ id: datum.id, data: datum.data });
           setSidebarMode('new');
+          setSidebarRelativeType('spouse');
           setSidebarOpen(true);
           break;
         case 'add-parent': {
@@ -384,6 +436,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
         case 'edit':
           setSidebarPerson({ id: datum.id, data: datum.data });
           setSidebarMode('edit');
+          setSidebarRelativeType(undefined);
           setSidebarOpen(true);
           break;
         case 'delete':
@@ -417,6 +470,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
     if (!datum) return;
     setSidebarPerson({ id: datum.id, data: datum.data });
     setSidebarMode('edit');
+    setSidebarRelativeType(undefined);
     setSidebarOpen(true);
   }
 
@@ -549,14 +603,20 @@ export function TreeView({ lineageId }: TreeViewProps) {
           onOpenChange={setSidebarOpen}
           person={sidebarPerson}
           mode={sidebarMode}
+          relativeType={sidebarRelativeType}
           isStarred={sidebarPerson ? starredIds.includes(sidebarPerson.id) : false}
           onToggleStar={toggleStarred}
           onSave={handleSave}
           onDelete={handleDelete}
           onAddRelative={handleAddRelative}
-          onAddRelativeClick={() => setSidebarMode('new')}
+          onAddRelativeClick={() => { setSidebarMode('new'); setSidebarRelativeType('son'); }}
           childrenOfPerson={sidebarChildrenInfo}
           onReorderChildren={handleReorderChildren}
+          onLinkExistingSpouse={handleLinkExistingSpouse}
+          treeData={treeData}
+          relationshipMap={relationshipMap}
+          onSetParent={handleSetParent}
+          onRemoveParent={handleRemoveParent}
         />
       </div>
       <KeyboardShortcutsHelp open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp} />
