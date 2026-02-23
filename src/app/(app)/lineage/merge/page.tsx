@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { Suspense, useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQueries } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ async function fetchPersons(lineageId: number): Promise<{ lineageId: number; per
   return { lineageId, persons: res.data };
 }
 
-export default function MergeWizardPage() {
+function MergeWizardPageInner() {
   const searchParams = useSearchParams();
   const lineageIds = useMemo(() => parseIds(searchParams.get('ids')), [searchParams]);
 
@@ -66,6 +66,20 @@ export default function MergeWizardPage() {
   }
 
   return <MergeWizardContent lineageIds={lineageIds} />;
+}
+
+export default function MergeWizardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+          <p>Đang tải...</p>
+        </div>
+      }
+    >
+      <MergeWizardPageInner />
+    </Suspense>
+  );
 }
 
 function MergeWizardContent({ lineageIds }: { lineageIds: number[] }) {

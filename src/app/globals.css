@@ -46,6 +46,15 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  /* Vietnamese cultural landing page colors */
+  --color-vn-red: var(--vn-red);
+  --color-vn-red-dark: var(--vn-red-dark);
+  --color-vn-red-light: var(--vn-red-light);
+  --color-vn-gold: var(--vn-gold);
+  --color-vn-gold-dark: var(--vn-gold-dark);
+  --color-vn-gold-light: var(--vn-gold-light);
+  --color-vn-green: var(--vn-green);
+  --color-vn-cream: var(--vn-cream);
 }
 
 :root {
@@ -81,6 +90,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Vietnamese cultural colors — landing page */
+  --vn-red: oklch(0.55 0.24 25);
+  --vn-red-dark: oklch(0.42 0.22 25);
+  --vn-red-light: oklch(0.75 0.15 25);
+  --vn-gold: oklch(0.78 0.16 85);
+  --vn-gold-dark: oklch(0.65 0.18 85);
+  --vn-gold-light: oklch(0.92 0.08 85);
+  --vn-green: oklch(0.55 0.14 155);
+  --vn-cream: oklch(0.97 0.02 85);
 }
 
 .dark {

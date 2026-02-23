@@ -1,6 +1,8 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002';
 const FRONTEND_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001';
 
 function GoogleIcon() {
@@ -14,25 +16,25 @@ function GoogleIcon() {
   );
 }
 
-function googleOAuthUrl() {
-  const origin = encodeURIComponent(`${FRONTEND_URL}/auth/callback`);
-  return `${BACKEND_URL}/auth/google_oauth2?origin=${origin}`;
-}
-
 export function OAuthButtons() {
+  const callbackUrl = `${FRONTEND_URL}/auth/callback`;
+  const actionUrl = `${BACKEND_URL}/auth/google_oauth2`;
+
   return (
     <div className="space-y-3">
-      <Button
-        variant="outline"
-        size="lg"
-        className="w-full"
-        asChild
-      >
-        <a href={googleOAuthUrl()}>
+      {/* OmniAuth 2 requires POST — use a form instead of <a href> */}
+      <form method="POST" action={actionUrl}>
+        <input type="hidden" name="origin" value={callbackUrl} />
+        <Button
+          type="submit"
+          variant="outline"
+          size="lg"
+          className="w-full"
+        >
           <GoogleIcon />
           Đăng nhập với Google
-        </a>
-      </Button>
+        </Button>
+      </form>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

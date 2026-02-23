@@ -1,6 +1,5 @@
 'use client';
-
-import { useState, useMemo, useCallback } from 'react';
+import { Suspense, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ function parseIds(raw: string | null): number[] {
     .filter((n) => Number.isFinite(n) && n > 0);
 }
 
-export default function CombinedViewPage() {
+function CombinedViewPageInner() {
   const searchParams = useSearchParams();
 
   const rawIds = searchParams.get('ids');
@@ -59,6 +58,21 @@ export default function CombinedViewPage() {
   }
 
   return <CombinedViewContent lineageIds={lineageIds} />;
+}
+
+export default function CombinedViewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-2 p-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-[calc(100vh-200px)] w-full" />
+        </div>
+      }
+    >
+      <CombinedViewPageInner />
+    </Suspense>
+  );
 }
 
 function CombinedViewContent({ lineageIds }: { lineageIds: number[] }) {
