@@ -106,6 +106,7 @@ function analyzePath(path: BfsNode[]): PathAnalysis {
     } else if (node.edgeType === 'child') {
       if (goingUp) {
         goingUp = false;
+        isDirectLine = false;
         commonAncestorId = node.parent;
       }
       genDiff--;
@@ -159,10 +160,16 @@ export function calculateKinship(
   if (!path) return null;
 
   const analysis = analyzePath(path);
+  // BUG 2 fix: detect side from first parent's gender, not hardcoded 'paternal'
+  let resolvedSide = analysis.side;
+  const firstParentStep = !analysis.isDirectLine ? path.find((n) => n.edgeType === 'parent') : null;
+  if (firstParentStep && analysis.commonAncestorId) {
+    const firstParent = dataMap.get(firstParentStep.id);
+    resolvedSide = firstParent?.data.gender === 'F' ? 'maternal' : 'paternal';
+  }
   const genderB = personB.data.gender as Gender;
   const nameA = personA.data.full_name || personA.data.ten;
   const nameB = personB.data.full_name || personB.data.ten;
-
   if (analysis.isSpouse) {
     const term = lookupSpouseTerm(genderB);
     return {
@@ -172,12 +179,23 @@ export function calculateKinship(
     };
   }
 
-  const isOlder = analysis.genDiff === 0 ? determineIsOlder(personA, personB) : undefined;
-
+  // BUG 3 fix: also compute isOlder for uncle/aunt (genDiff===1, collateral)
+  // Mediating person = A's direct parent (firstParentStep), who is sibling of uncle/aunt
+  let isOlder: boolean | undefined = undefined;
+  if (analysis.genDiff === 0) {
+    isOlder = determineIsOlder(personA, personB);
+  } else if (analysis.genDiff === 1 && !analysis.isDirectLine && path.length >= 2) {
+    if (firstParentStep) {
+      const mediator = dataMap.get(firstParentStep.id);
+      if (mediator) {
+        isOlder = determineIsOlder(mediator, personB);
+      }
+    }
+  }
   // For direct line: use genDiff directly
   // genDiff > 0 means B is in older generation (ancestor of A)
   // genDiff < 0 means B is in younger generation (descendant of A)
-  const side = analysis.isDirectLine ? 'direct' : analysis.side;
+  const side = analysis.isDirectLine ? 'direct' : resolvedSide;
   const term = lookupKinshipTerm(analysis.genDiff, side, genderB, isOlder);
 
   if (!term) {
