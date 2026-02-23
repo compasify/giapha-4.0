@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BookOpen, Users, Calendar, Settings, LogOut, TreePine } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Calendar, Settings, LogOut } from 'lucide-react';
+import { AppLogo } from '@/components/ui/app-logo';
 import {
   Sidebar,
   SidebarContent,
@@ -33,18 +34,18 @@ export function AppSidebar() {
 
   const initials = user?.name
     ? user.name
-        .split(' ')
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : 'U';
 
   return (
     <Sidebar>
       <SidebarHeader className="h-14 justify-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <TreePine className="h-5 w-5 text-primary" />
+          <AppLogo size={24} />
           <span>Gia Phả Online</span>
         </Link>
       </SidebarHeader>

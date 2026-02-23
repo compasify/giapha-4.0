@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { TreePine } from 'lucide-react';
 import { LandingNav } from '@/components/landing/landing-nav';
 import { AuthHydrator } from '@/providers/auth-hydrator';
 import { getCurrentUser } from '@/app/actions/auth-actions';
+import { AppLogo } from '@/components/ui/app-logo';
 
 export default async function LandingLayout({
   children,
@@ -16,7 +16,7 @@ export default async function LandingLayout({
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <TreePine className="h-5 w-5 text-vn-red" />
+            <AppLogo size={24} />
             <span className="text-vn-red-dark">Gia Phả Online</span>
           </Link>
           <LandingNav />
@@ -27,7 +27,7 @@ export default async function LandingLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <TreePine className="h-4 w-4 text-vn-red" />
+              <AppLogo size={16} />
               <span>© 2026 Gia Phả Online</span>
             </div>
             <nav className="flex gap-6 text-sm text-muted-foreground">

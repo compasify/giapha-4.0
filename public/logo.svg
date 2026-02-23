@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#C8102E"/>
+      <stop offset="100%" stop-color="#8B0000"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+
+  <!-- Outer decorative ring -->
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#DFB15B" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- Tree trunk — strong vertical line symbolizing the family root -->
+  <line x1="32" y1="50" x2="32" y2="28" stroke="#DFB15B" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Root branches — spreading downward to represent heritage -->
+  <path d="M 32 50 Q 24 54 18 52" stroke="#DFB15B" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M 32 50 Q 40 54 46 52" stroke="#DFB15B" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M 32 50 Q 28 56 22 56" stroke="#DFB15B" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M 32 50 Q 36 56 42 56" stroke="#DFB15B" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+
+  <!-- Crown branches — 3-generation fan spreading upward -->
+  <path d="M 32 28 Q 28 20 20 14" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M 32 28 L 32 10" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 32 28 Q 36 20 44 14" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Secondary finer branches -->
+  <path d="M 26 20 Q 22 16 16 18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+  <path d="M 38 20 Q 42 16 48 18" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+  <path d="M 32 18 Q 28 14 24 10" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M 32 18 Q 36 14 40 10" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+
+  <!-- Person nodes — representing family members -->
+  <!-- Generation 1: Ancestors at top -->
+  <circle cx="20" cy="12" r="4" fill="#DFB15B"/>
+  <circle cx="32" cy="8" r="4" fill="#DFB15B"/>
+  <circle cx="44" cy="12" r="4" fill="#DFB15B"/>
+
+  <!-- Generation 2: Mid nodes -->
+  <circle cx="15" cy="18" r="3" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="49" cy="18" r="3" fill="#FFFFFF" opacity="0.9"/>
+
+  <!-- Generation 3: Branch tips -->
+  <circle cx="24" cy="10" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+  <circle cx="40" cy="10" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+
+  <!-- Center focal node — heart of the family -->
+  <circle cx="32" cy="28" r="5" fill="#FFFFFF"/>
+  <circle cx="32" cy="28" r="3" fill="#DFB15B"/>
+</svg>
