@@ -21,7 +21,7 @@ import type { FamilyChartDatum, RelationshipInfo } from '@/lib/transforms/family
 import { KeyboardShortcutsHelp } from '@/components/tree/keyboard-shortcuts-help';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Focus, Download, Share2, Settings } from 'lucide-react';
+import { Focus, Download, Share2, Settings, Scissors, X } from 'lucide-react';
 import Link from 'next/link';
 import { useFamilyTreeData } from '@/hooks/use-family-tree-data';
 import { useLineage } from '@/hooks/use-lineages';
@@ -31,6 +31,12 @@ import { EmptyTreeState } from '@/components/tree/empty-tree-state';
 import { useTreeDragDrop } from '@/hooks/use-tree-drag-drop';
 import { ReparentConfirmDialog } from '@/components/tree/reparent-confirm-dialog';
 import type { ParentRelationType } from '@/components/tree/edit-sidebar';
+import { useSearchParams } from 'next/navigation';
+import { TreeSelectionOverlay, getSubtreeIds, type SelectionMode } from '@/components/tree/tree-selection';
+import { SplitPreviewPanel } from '@/components/tree/split-preview-panel';
+import { SplitNameDialog } from '@/components/tree/split-name-dialog';
+import { useSplitLineage } from '@/hooks/use-split-lineage';
+import { ShareBranchDialog } from '@/components/tree/share-branch-dialog';
 
 function findSiblings(personId: string, data: FamilyChartDatum[]): string[] {
   const dataMap = new Map(data.map((d) => [d.id, d]));
@@ -88,6 +94,16 @@ export function TreeView({ lineageId }: TreeViewProps) {
     sourceId: string;
     targetId: string;
   } | null>(null);
+
+  // ── Split mode state ────────────────────────────────────────────────────
+  const searchParams = useSearchParams();
+  const [splitMode, setSplitMode] = useState(searchParams.get('mode') === 'split');
+  const [splitSelectedIds, setSplitSelectedIds] = useState<Set<string>>(new Set());
+  const [splitSelectionMode, setSplitSelectionMode] = useState<SelectionMode>('subtree');
+  const [showSplitPreview, setShowSplitPreview] = useState(false);
+  const [showSplitNameDialog, setShowSplitNameDialog] = useState(false);
+  const [showShareBranch, setShowShareBranch] = useState(false);
+  const splitMutation = useSplitLineage(lineageId);
 
   const starredIds = useStarredStore((s) => s.starredIds);
   const toggleStarred = useStarredStore((s) => s.toggle);
@@ -198,6 +214,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
 
       if (e.key === 'Escape') {
         if (contextMenu) { setContextMenu(null); e.preventDefault(); return; }
+        if (splitMode) { setSplitMode(false); setSplitSelectedIds(new Set()); e.preventDefault(); return; }
         if (sidebarOpen) { setSidebarOpen(false); e.preventDefault(); return; }
         if (focusPersonId) { setFocusPersonId(null); e.preventDefault(); return; }
         return;
@@ -459,11 +476,17 @@ export function TreeView({ lineageId }: TreeViewProps) {
         case 'view-kinship':
           navigateTo(personId);
           break;
+        case 'split-from-here': {
+          const subtreeIds = getSubtreeIds(personId, treeData);
+          setSplitSelectedIds(subtreeIds);
+          setSplitSelectionMode('subtree');
+          setSplitMode(true);
+          break;
+        }
       }
     },
     [treeData, handleDelete, handleAddAncestor, navigateTo],
   );
-
   function handlePersonClick(personId: number) {
     if (treeData.length === 0) return;
     const datum = treeData.find((d) => d.id === String(personId));
@@ -532,6 +555,49 @@ export function TreeView({ lineageId }: TreeViewProps) {
           Thoát focus
         </Button>
       )}
+      {splitMode ? (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="default"
+            size="sm"
+            className="gap-1"
+            disabled={splitSelectedIds.size === 0}
+            onClick={() => setShowSplitPreview(true)}
+          >
+            <Scissors className="h-3.5 w-3.5" />
+            Xem preview ({splitSelectedIds.size})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1"
+            disabled={splitSelectedIds.size === 0}
+            onClick={() => setShowShareBranch(true)}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Chia sẻ nhánh
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1"
+            onClick={() => { setSplitMode(false); setSplitSelectedIds(new Set()); }}
+          >
+            <X className="h-3.5 w-3.5" />
+            Thoát tách
+          </Button>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1"
+          onClick={() => { setSplitMode(true); setSplitSelectedIds(new Set()); setSplitSelectionMode('subtree'); }}
+        >
+          <Scissors className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Tách nhánh</span>
+        </Button>
+      )}
       <div className="flex items-center gap-1 ml-auto">
         <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowExport(true)}>
           <Download className="h-3.5 w-3.5" />
@@ -575,8 +641,19 @@ export function TreeView({ lineageId }: TreeViewProps) {
           <XungHoTooltip
             data={treeData}
             container={containerRef.current}
-            selectedPersonId={sidebarPerson?.id ?? null}
           />
+          {splitMode && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40">
+              <TreeSelectionOverlay
+                chartContainer={containerRef.current}
+                data={treeData}
+                selectedIds={splitSelectedIds}
+                onSelectionChange={setSplitSelectedIds}
+                mode={splitSelectionMode}
+                onModeChange={setSplitSelectionMode}
+              />
+            </div>
+          )}
           {contextMenu && (() => {
             const datum = treeData.find((d) => d.id === contextMenu.personId);
             if (!datum) return null;
@@ -622,6 +699,33 @@ export function TreeView({ lineageId }: TreeViewProps) {
       <KeyboardShortcutsHelp open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp} />
       <ExportDialog open={showExport} onOpenChange={setShowExport} chart={chart} />
       <ShareDialog open={showShare} onOpenChange={setShowShare} lineageId={lineageId} accessCodeRequired={lineage?.privacy_level === 2} />
+      <SplitPreviewPanel
+        open={showSplitPreview}
+        onOpenChange={setShowSplitPreview}
+        selectedIds={splitSelectedIds}
+        data={treeData}
+        relationshipMap={relationshipMap}
+        onConfirm={() => {
+          setShowSplitPreview(false);
+          setShowSplitNameDialog(true);
+        }}
+      />
+      <SplitNameDialog
+        open={showSplitNameDialog}
+        onOpenChange={setShowSplitNameDialog}
+        sourceLineageName={lineage?.name ?? ''}
+        suggestedName={`${lineage?.name ?? 'Gia phả'} - Nhánh tách`}
+        isPending={splitMutation.isPending}
+        onConfirm={(name, mode, createSnapshot) => {
+          splitMutation.mutate({
+            newName: name,
+            personIds: [...splitSelectedIds].map(Number),
+            splitMode: mode,
+            createSnapshot,
+            sourceLineageName: lineage?.name ?? '',
+          });
+        }}
+      />
       {reparentPending && (() => {
         const source = treeData.find((d) => d.id === reparentPending.sourceId);
         const target = treeData.find((d) => d.id === reparentPending.targetId);
@@ -636,6 +740,15 @@ export function TreeView({ lineageId }: TreeViewProps) {
           />
         );
       })()}
+      <ShareBranchDialog
+        open={showShareBranch}
+        onOpenChange={setShowShareBranch}
+        selectedIds={splitSelectedIds}
+        lineageId={lineageId}
+        lineageName={lineage?.name ?? 'Gia phả'}
+        chart={chart}
+        chartContainer={containerRef.current}
+      />
     </div>
   );
 }
