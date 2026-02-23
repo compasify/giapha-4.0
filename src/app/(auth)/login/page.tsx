@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { loginSchema, type LoginFormValues } from '@/lib/validations/auth-schema';
@@ -17,6 +17,7 @@ import { OAuthButtons } from '@/components/shared/oauth-buttons';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const setUser = useAuthStore((s) => s.setUser);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,7 +40,7 @@ export default function LoginPage() {
       if (result.data) {
         setUser(result.data);
       }
-      router.push('/dashboard');
+      router.push(searchParams.get('redirect') ?? '/dashboard');
     } finally {
       setIsSubmitting(false);
     }

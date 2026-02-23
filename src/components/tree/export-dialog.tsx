@@ -62,7 +62,7 @@ export function ExportDialog({ open, onOpenChange, chart, lineageName }: ExportD
           await exportSvg(chart.cont, { filename });
           break;
         case 'pdf':
-          await exportPdf(chart.svg, {
+          await exportPdf(chart.cont, {
             paperSize,
             orientation,
             title: lineageName || 'Gia Phả',

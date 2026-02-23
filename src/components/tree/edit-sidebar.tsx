@@ -233,6 +233,7 @@ export function EditSidebar({
     if (mode === 'new') {
       setValues(toFormValues(null));
       setIsAlive(true);
+      setNewRelType(relativeType ?? 'son');
     } else if (person) {
       setValues(toFormValues(person.data));
       setIsAlive(person.data.is_alive);
@@ -245,11 +246,7 @@ export function EditSidebar({
     setSelectedExistingId(null);
     setSelectedCoParentId(personSpouses.length > 0 ? personSpouses[0].id : null);
     setSharedChildIds(new Set(personChildren.map((c) => c.id)));
-  }, [person, mode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (relativeType) setNewRelType(relativeType);
-  }, [relativeType]);
+  }, [person, mode, relativeType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (mode !== 'new') return;

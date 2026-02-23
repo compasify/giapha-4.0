@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useLineage } from '@/hooks/use-lineages';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -25,8 +26,12 @@ const PAGE_TITLES: Record<string, string> = {
 export function AppHeader() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
-
+  // Extract lineage ID from /lineage/[id] paths
+  const lineageIdMatch = pathname.match(/^\/lineage\/(\d+)/);
+  const lineageId = lineageIdMatch ? Number(lineageIdMatch[1]) : 0;
+  const { data: lineage } = useLineage(lineageId);
   const pageTitle =
+    (lineageId > 0 && lineage?.name) ? lineage.name :
     PAGE_TITLES[pathname] ??
     Object.entries(PAGE_TITLES).find(([key]) => pathname.startsWith(key))?.[1] ??
     'Gia Phả Online';

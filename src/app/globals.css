@@ -416,6 +416,26 @@
   line-height: 1;
 }
 
+/* ── Combined view: lineage badge ─────────────────────────────────────── */
+.f3-vn-lineage-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.9;
+}
+
 .dark .f3-vn-card.f3-card-male {
   background: linear-gradient(135deg, #1e3a5f 0%, #1e40af33 100%);
   border-color: #60a5fa;

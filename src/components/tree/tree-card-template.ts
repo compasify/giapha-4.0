@@ -13,10 +13,16 @@ export function setCollapsedState(ids: Set<string>, counts: Map<string, number>)
   _hiddenCounts = counts;
 }
 
+/** Extended data fields for combined (multi-lineage) view */
+interface CombinedCardFields {
+  lineage_color?: string;
+  lineage_badge?: string;
+  is_external?: boolean;
+}
 interface TreeDatum {
   data: {
     id: string;
-    data: FamilyChartPersonData & { main?: boolean };
+    data: FamilyChartPersonData & { main?: boolean } & CombinedCardFields;
     rels: { parents: string[]; spouses: string[]; children: string[] };
   };
 }
@@ -129,14 +135,22 @@ export function vietnameseCardHtml(d: TreeDatum): string {
     <button class="f3-vn-action-btn" data-action="add" title="Thêm người thân" aria-label="Thêm">${addPersonIconSvg()}</button>
   </div>`;
 
+  // Combined view: lineage badge + left border color
+  const lineageColor = (data as CombinedCardFields).lineage_color;
+  const lineageBadge = (data as CombinedCardFields).lineage_badge;
+  const borderStyle = lineageColor ? `border-left:4px solid ${lineageColor};` : '';
+  const lineageBadgeHtml = lineageBadge && lineageColor
+    ? `<span class="f3-vn-lineage-badge" style="background:${lineageColor}" title="T\u1eeb gia ph\u1ea3">${escapeHtml(lineageBadge)}</span>`
+    : '';
   return `
-<div class="f3-vn-card ${genderClass} ${mainClass} ${deceasedClass} ${starredClass} ${collapsedClass}" data-person-id="${d.data.id}" role="treeitem" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${hasChildren}">
+<div class="f3-vn-card ${genderClass} ${mainClass} ${deceasedClass} ${starredClass} ${collapsedClass}" data-person-id="${d.data.id}" role="treeitem" tabindex="0" aria-label="${escapeHtml(ariaLabel)}" aria-expanded="${hasChildren}" style="${borderStyle}">
   ${starIcon}
+  ${lineageBadgeHtml}
   <div class="f3-vn-avatar" style="background:${avatarBg};color:${avatarColor};border-color:${avatarBorder}" aria-hidden="true">
     ${avatarContent}
   </div>
   <div class="f3-vn-info">
-    <div class="f3-vn-name">${fullName || '(Không rõ)'}</div>
+    <div class="f3-vn-name">${fullName || '(Kh\u00f4ng r\u00f5)'}</div>
     <div class="f3-vn-lifespan">${lifespan}</div>
   </div>
   <div class="f3-vn-badges" aria-hidden="true">

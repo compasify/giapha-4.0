@@ -11,6 +11,7 @@ import {
   UnfoldVertical,
   Focus,
   GitBranch,
+  Scissors,
 } from 'lucide-react';
 
 export type ContextMenuAction =
@@ -21,7 +22,8 @@ export type ContextMenuAction =
   | { type: 'delete' }
   | { type: 'toggle-collapse' }
   | { type: 'focus' }
-  | { type: 'view-kinship' };
+  | { type: 'view-kinship' }
+  | { type: 'split-from-here' };
 
 interface TreeContextMenuProps {
   personName: string;
@@ -100,6 +102,7 @@ export function TreeContextMenu({
     },
     { label: 'Tập trung', icon: <Focus size={ICON_SIZE} />, action: { type: 'focus' } },
     { label: 'Xem xưng hô', icon: <GitBranch size={ICON_SIZE} />, action: { type: 'view-kinship' } },
+    { label: 'Tách nhánh từ đây', icon: <Scissors size={ICON_SIZE} />, action: { type: 'split-from-here' } },
   ];
 
   const visibleItems = items.filter((item) => item.show !== false);
