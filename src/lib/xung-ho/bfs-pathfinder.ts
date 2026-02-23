@@ -1,5 +1,5 @@
 import type { FamilyChartDatum } from '@/lib/transforms/family-chart-transform';
-import { lookupKinshipTerm, lookupSpouseTerm, type KinshipSide, type Gender } from './kinship-terms';
+import { lookupKinshipTerm, lookupSpouseTerm, lookupInLawTerm, lookupSpouseRelativeTerm, type KinshipSide, type Gender } from './kinship-terms';
 
 export interface KinshipResult {
   term: string;
@@ -150,65 +150,152 @@ export function calculateKinship(
   data: FamilyChartDatum[],
 ): KinshipResult | null {
   if (personAId === personBId) return null;
-
   const dataMap = new Map(data.map((d) => [d.id, d]));
   const personA = dataMap.get(personAId);
   const personB = dataMap.get(personBId);
   if (!personA || !personB) return null;
-
   const path = bfsPath(personAId, personBId, dataMap);
   if (!path) return null;
+  const genderB = personB.data.gender as Gender;
+  const nameA = personA.data.full_name || personA.data.ten;
+  const nameB = personB.data.full_name || personB.data.ten;
+  const makePath = () => path.map((n) => n.id);
+  const makeResult = (term: string): KinshipResult => ({
+    term,
+    path: makePath(),
+    description: `${nameB} l\u00e0 ${term} c\u1ee7a ${nameA}`,
+  });
 
+  // ── Case 0: Direct spouse (single spouse edge) ───────────────────────────
   const analysis = analyzePath(path);
-  // BUG 2 fix: detect side from first parent's gender, not hardcoded 'paternal'
+  if (analysis.isSpouse) {
+    return makeResult(lookupSpouseTerm(genderB));
+  }
+
+  // Detect spouse edge positions
+  const lastEdge = path[path.length - 1];
+  const firstEdge = path[0];
+  const endsWithSpouse = lastEdge?.edgeType === 'spouse';
+  const startsWithSpouse = firstEdge?.edgeType === 'spouse';
+
+  // ── Case 1: Terminal spouse (B is spouse of a blood relative) ─────────────
+  // Path: A → ... → bloodRelative → B(spouse)
+  // Example: A → son → son's wife = Con dâu
+  if (endsWithSpouse && !startsWithSpouse) {
+    const bloodPath = path.slice(0, -1);
+    const bloodRelativeId = lastEdge.parent!;
+    const bloodRelative = dataMap.get(bloodRelativeId);
+    if (!bloodRelative) return makeResult('H\u1ecd h\u00e0ng (qua h\u00f4n nh\u00e2n)');
+
+    const bloodGender = bloodRelative.data.gender as Gender;
+    const bloodAnalysis = analyzePath(bloodPath);
+
+    let resolvedSide = bloodAnalysis.side;
+    const firstParentStep = !bloodAnalysis.isDirectLine
+      ? bloodPath.find((n) => n.edgeType === 'parent')
+      : null;
+    if (firstParentStep && bloodAnalysis.commonAncestorId) {
+      const firstParent = dataMap.get(firstParentStep.id);
+      resolvedSide = firstParent?.data.gender === 'F' ? 'maternal' : 'paternal';
+    }
+    const side = bloodAnalysis.isDirectLine ? 'direct' : resolvedSide;
+
+    let isOlder: boolean | undefined = undefined;
+    if (bloodAnalysis.genDiff === 0) {
+      isOlder = determineIsOlder(personA, bloodRelative);
+    } else if (bloodAnalysis.genDiff === 1 && !bloodAnalysis.isDirectLine && bloodPath.length >= 2) {
+      if (firstParentStep) {
+        const mediator = dataMap.get(firstParentStep.id);
+        if (mediator) isOlder = determineIsOlder(mediator, bloodRelative);
+      }
+    }
+
+    const bloodTerm = lookupKinshipTerm(bloodAnalysis.genDiff, side, bloodGender, isOlder);
+    if (!bloodTerm) return makeResult('H\u1ecd h\u00e0ng (qua h\u00f4n nh\u00e2n)');
+
+    return makeResult(lookupInLawTerm(bloodTerm, genderB));
+  }
+
+  // ── Case 2: Initial spouse (B is blood relative of A's spouse) ────────────
+  // Path: A → spouse → ... → B
+  // Example: A → wife → wife's father = Bố vợ
+  if (startsWithSpouse && !endsWithSpouse) {
+    const spouseId = firstEdge.id;
+    const spouse = dataMap.get(spouseId);
+    if (!spouse) return makeResult('H\u1ecd h\u00e0ng (qua h\u00f4n nh\u00e2n)');
+    const spouseGender = spouse.data.gender as Gender;
+
+    const bloodPath = path.slice(1);
+    const bloodAnalysis = analyzePath(bloodPath);
+
+    let resolvedSide = bloodAnalysis.side;
+    const firstParentStep = !bloodAnalysis.isDirectLine
+      ? bloodPath.find((n) => n.edgeType === 'parent')
+      : null;
+    if (firstParentStep && bloodAnalysis.commonAncestorId) {
+      const firstParent = dataMap.get(firstParentStep.id);
+      resolvedSide = firstParent?.data.gender === 'F' ? 'maternal' : 'paternal';
+    }
+    const side = bloodAnalysis.isDirectLine ? 'direct' : resolvedSide;
+
+    let isOlder: boolean | undefined = undefined;
+    if (bloodAnalysis.genDiff === 0) {
+      isOlder = determineIsOlder(spouse, personB);
+    } else if (bloodAnalysis.genDiff === 1 && !bloodAnalysis.isDirectLine && bloodPath.length >= 2) {
+      if (firstParentStep) {
+        const mediator = dataMap.get(firstParentStep.id);
+        if (mediator) isOlder = determineIsOlder(mediator, personB);
+      }
+    }
+
+    const bloodTerm = lookupKinshipTerm(bloodAnalysis.genDiff, side, genderB, isOlder);
+    if (!bloodTerm) return makeResult('H\u1ecd h\u00e0ng (qua h\u00f4n nh\u00e2n)');
+
+    return makeResult(lookupSpouseRelativeTerm(bloodTerm, spouseGender));
+  }
+
+  // ── Case 3: Both ends spouse (complex) ────────────────────────────────────
+  if (startsWithSpouse && endsWithSpouse) {
+    return makeResult('H\u1ecd h\u00e0ng (qua h\u00f4n nh\u00e2n)');
+  }
+
+  // ── Case 4: Blood-only path (original logic) ─────────────────────────────
   let resolvedSide = analysis.side;
-  const firstParentStep = !analysis.isDirectLine ? path.find((n) => n.edgeType === 'parent') : null;
+  const firstParentStep = path.find((n) => n.edgeType === 'parent') ?? null;
   if (firstParentStep && analysis.commonAncestorId) {
     const firstParent = dataMap.get(firstParentStep.id);
     resolvedSide = firstParent?.data.gender === 'F' ? 'maternal' : 'paternal';
   }
-  const genderB = personB.data.gender as Gender;
-  const nameA = personA.data.full_name || personA.data.ten;
-  const nameB = personB.data.full_name || personB.data.ten;
-  if (analysis.isSpouse) {
-    const term = lookupSpouseTerm(genderB);
-    return {
-      term,
-      path: path.map((n) => n.id),
-      description: `${nameB} là ${term} của ${nameA}`,
-    };
-  }
 
-  // BUG 3 fix: also compute isOlder for uncle/aunt (genDiff===1, collateral)
-  // Mediating person = A's direct parent (firstParentStep), who is sibling of uncle/aunt
   let isOlder: boolean | undefined = undefined;
   if (analysis.genDiff === 0) {
     isOlder = determineIsOlder(personA, personB);
   } else if (analysis.genDiff === 1 && !analysis.isDirectLine && path.length >= 2) {
     if (firstParentStep) {
       const mediator = dataMap.get(firstParentStep.id);
-      if (mediator) {
-        isOlder = determineIsOlder(mediator, personB);
-      }
+      if (mediator) isOlder = determineIsOlder(mediator, personB);
     }
   }
-  // For direct line: use genDiff directly
-  // genDiff > 0 means B is in older generation (ancestor of A)
-  // genDiff < 0 means B is in younger generation (descendant of A)
-  const side = analysis.isDirectLine ? 'direct' : resolvedSide;
+  // Direct line: genDiff 0-1 use 'direct'; genDiff >= 2 resolve to paternal/maternal
+  let side: KinshipSide;
+  if (analysis.isDirectLine) {
+    if (Math.abs(analysis.genDiff) >= 2 && firstParentStep) {
+      const firstParent = dataMap.get(firstParentStep.id);
+      side = firstParent?.data.gender === 'F' ? 'maternal' : 'paternal';
+    } else {
+      side = 'direct';
+    }
+  } else {
+    side = resolvedSide;
+  }
   const term = lookupKinshipTerm(analysis.genDiff, side, genderB, isOlder);
-
   if (!term) {
     return {
-      term: `Họ hàng (${Math.abs(analysis.genDiff)} đời)`,
-      path: path.map((n) => n.id),
-      description: `${nameB} là họ hàng của ${nameA}`,
+      term: `H\u1ecd h\u00e0ng (${Math.abs(analysis.genDiff)} \u0111\u1eddi)`,
+      path: makePath(),
+      description: `${nameB} l\u00e0 h\u1ecd h\u00e0ng c\u1ee7a ${nameA}`,
     };
   }
 
-  return {
-    term,
-    path: path.map((n) => n.id),
-    description: `${nameB} là ${term} của ${nameA}`,
-  };
+  return makeResult(term);
 }

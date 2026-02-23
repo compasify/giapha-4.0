@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ZoomIn, ZoomOut, Maximize, Keyboard, Map as MapIcon } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize, Keyboard, Map as MapIcon, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MiniMapPanel } from './mini-map';
 import type { FamilyChartInstance } from './family-tree';
@@ -9,24 +9,31 @@ import type { FamilyChartInstance } from './family-tree';
 interface TreeControlsProps {
   chart: FamilyChartInstance | null;
   onShowShortcuts?: () => void;
+  xungHoOpen?: boolean;
+  onToggleXungHo?: () => void;
 }
 
-function getZoomBehavior(svg: SVGElement) {
-  const d3Module = import('d3-selection');
-  const d3Zoom = import('d3-zoom');
-  return Promise.all([d3Module, d3Zoom]).then(([d3sel, d3z]) => {
-    const sel = d3sel.select(svg);
-    const currentTransform = d3z.zoomTransform(svg);
-    return { sel, d3z, currentTransform };
-  });
+/**
+ * Get the library's own zoom behavior from the f3Canvas element.
+ * family-chart attaches zoom to #f3Canvas (svg.parentNode), not the SVG itself.
+ */
+export function getChartZoom(svg: SVGElement) {
+  const zoomEl = (svg as unknown as { __zoomObj?: unknown }).__zoomObj
+    ? svg
+    : (svg.parentNode as HTMLElement);
+  const zoomObj = (zoomEl as unknown as { __zoomObj: unknown }).__zoomObj;
+  if (!zoomObj) return null;
+  return { zoomEl, zoomObj };
 }
 
 export function handleZoom(chart: FamilyChartInstance | null, scaleFactor: number) {
   if (!chart) return;
-  getZoomBehavior(chart.svg).then(({ sel, d3z, currentTransform }) => {
-    const zoom = d3z.zoom();
-    const newTransform = currentTransform.scale(scaleFactor);
-    sel.transition().duration(300).call(zoom.transform as never, newTransform);
+  const z = getChartZoom(chart.svg);
+  if (!z) return;
+
+  import('d3-selection').then((d3sel) => {
+    const sel = d3sel.select(z.zoomEl);
+    sel.transition().duration(300).call((z.zoomObj as { scaleBy: never }).scaleBy, scaleFactor);
   });
 }
 
@@ -37,7 +44,7 @@ function handleFit(chart: FamilyChartInstance | null) {
 
 const BTN = 'bg-background/80 backdrop-blur-sm';
 
-export function TreeControls({ chart, onShowShortcuts }: TreeControlsProps) {
+export function TreeControls({ chart, onShowShortcuts, xungHoOpen, onToggleXungHo }: TreeControlsProps) {
   const [miniMapOpen, setMiniMapOpen] = useState(false);
 
   return (
@@ -61,6 +68,11 @@ export function TreeControls({ chart, onShowShortcuts }: TreeControlsProps) {
         {onShowShortcuts && (
           <Button variant="outline" size="icon-sm" onClick={onShowShortcuts} title="Phím tắt (?)" className={BTN}>
             <Keyboard className="h-4 w-4" />
+          </Button>
+        )}
+        {onToggleXungHo && (
+          <Button variant="outline" size="icon-sm" onClick={onToggleXungHo} title="Xưng hô" className={`${BTN} ${xungHoOpen ? 'bg-primary/10 border-primary text-primary' : ''}`}>
+            <Users className="h-4 w-4" />
           </Button>
         )}
       </div>

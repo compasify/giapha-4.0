@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Users, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Users, ChevronRight, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { FamilyChartDatum } from '@/lib/transforms/family-chart-transform';
@@ -10,14 +10,33 @@ import { calculateKinship, type KinshipResult } from '@/lib/xung-ho';
 interface XungHoPanelProps {
   data: FamilyChartDatum[];
   container: HTMLElement | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function XungHoPanel({ data, container }: XungHoPanelProps) {
+const UNSET = -1;
+const DEFAULT_POS = { x: UNSET, y: UNSET };
+
+export function XungHoPanel({ data, container, isOpen, onClose }: XungHoPanelProps) {
   const [personAId, setPersonAId] = useState<string | null>(null);
   const [personBId, setPersonBId] = useState<string | null>(null);
   const [activeSlot, setActiveSlot] = useState<'A' | 'B' | null>(null);
   const [result, setResult] = useState<KinshipResult | null>(null);
-  const [isOpen, setIsOpen] = useState(true);
+
+  const [pos, setPos] = useState(DEFAULT_POS);
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && pos.x === UNSET && pos.y === UNSET) {
+      const panelW = 256;
+      setPos({
+        x: window.innerWidth - panelW - 60,
+        y: window.innerHeight - 340,
+      });
+    }
+  }, [isOpen, pos.x, pos.y]);
 
   // Reset when data changes (e.g. tree switches)
   useEffect(() => {
@@ -58,19 +77,45 @@ export function XungHoPanel({ data, container }: XungHoPanelProps) {
       e.stopPropagation();
 
       if (activeSlot === 'A') {
-        if (pid === personBId) return; // prevent A === B
+        if (pid === personBId) return;
         setPersonAId(pid);
-        setActiveSlot('B'); // auto-advance to slot B
+        setActiveSlot('B');
       } else if (activeSlot === 'B') {
-        if (pid === personAId) return; // prevent A === B
+        if (pid === personAId) return;
         setPersonBId(pid);
-        setActiveSlot(null); // done selecting
+        setActiveSlot(null);
       }
     }
 
     el.addEventListener('click', handleClick, { capture: true });
     return () => el.removeEventListener('click', handleClick, { capture: true });
   }, [container, activeSlot, personAId, personBId]);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-drag-handle]')) return;
+
+    e.preventDefault();
+    dragging.current = true;
+    dragOffset.current = {
+      x: e.clientX - pos.x,
+      y: e.clientY - pos.y,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, [pos.x, pos.y]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const panelW = panelRef.current?.offsetWidth ?? 256;
+    const panelH = panelRef.current?.offsetHeight ?? 300;
+    const newX = Math.max(0, Math.min(window.innerWidth - panelW, e.clientX - dragOffset.current.x));
+    const newY = Math.max(0, Math.min(window.innerHeight - panelH, e.clientY - dragOffset.current.y));
+    setPos({ x: newX, y: newY });
+  }, []);
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
 
   const personA = personAId ? data.find((d) => d.id === personAId) : null;
   const personB = personBId ? data.find((d) => d.id === personBId) : null;
@@ -84,27 +129,26 @@ export function XungHoPanel({ data, container }: XungHoPanelProps) {
     setResult(null);
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 left-4 z-50 flex items-center gap-1.5 rounded-full bg-background border shadow-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Users className="h-3.5 w-3.5" />
-        Xưng hô
-      </button>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
     <div
-      className="fixed bottom-4 left-4 z-50 w-64 rounded-lg border bg-popover shadow-lg"
+      ref={panelRef}
+      className="fixed z-50 w-64 rounded-lg border bg-popover shadow-lg select-none"
+      style={{ left: pos.x, top: pos.y }}
       role="complementary"
       aria-label="Xưng hô"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <div className="flex items-center gap-1.5 text-xs font-semibold">
+      {/* Header — draggable */}
+      <div
+        className="flex items-center justify-between px-3 py-2 border-b cursor-grab active:cursor-grabbing"
+        data-drag-handle
+      >
+        <div className="flex items-center gap-1.5 text-xs font-semibold" data-drag-handle>
+          <GripVertical className="h-3 w-3 text-muted-foreground/50" />
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
           Xưng hô
         </div>
@@ -112,7 +156,7 @@ export function XungHoPanel({ data, container }: XungHoPanelProps) {
           variant="ghost"
           size="icon"
           className="h-5 w-5 -mr-1"
-          onClick={() => { dismiss(); setIsOpen(false); }}
+          onClick={() => { dismiss(); onClose(); }}
         >
           <X className="h-3 w-3" />
         </Button>

@@ -103,6 +103,7 @@ export function TreeView({ lineageId }: TreeViewProps) {
   const [showSplitPreview, setShowSplitPreview] = useState(false);
   const [showSplitNameDialog, setShowSplitNameDialog] = useState(false);
   const [showShareBranch, setShowShareBranch] = useState(false);
+  const [xungHoOpen, setXungHoOpen] = useState(false);
   const splitMutation = useSplitLineage(lineageId);
 
   const starredIds = useStarredStore((s) => s.starredIds);
@@ -637,10 +638,12 @@ export function TreeView({ lineageId }: TreeViewProps) {
           />
           <BiographyPopup container={containerRef.current} data={treeData} />
           <RelationshipLegend />
-          <TreeControls chart={chart} onShowShortcuts={() => setShowShortcutsHelp(true)} />
+          <TreeControls chart={chart} onShowShortcuts={() => setShowShortcutsHelp(true)} xungHoOpen={xungHoOpen} onToggleXungHo={() => setXungHoOpen((p) => !p)} />
           <XungHoTooltip
             data={treeData}
             container={containerRef.current}
+            isOpen={xungHoOpen}
+            onClose={() => setXungHoOpen(false)}
           />
           {splitMode && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40">

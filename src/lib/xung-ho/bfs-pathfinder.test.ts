@@ -307,8 +307,8 @@ describe('calculateKinship', () => {
     expect(calculateKinship('A', 'aunt_younger', data)?.term).toBe('Cô');
   });
 
-  // ── Test 11: Grandparent (algorithm limitation) ────────────────────────
-  it('grandparent: direct-line grandparents return fallback (algorithm limitation: isDirectLine=true → side=direct, but genDiff=2/side=direct has no entry in kinship-terms)', () => {
+  // ── Test 11: Grandparent (FIXED) ────────────────────────────────────────────
+  it('grandparent: paternal grandpa → Ông nội, maternal grandma → Bà ngoại', () => {
     // Paternal side
     const paternalGrandpa = makePerson('paternal_grandpa', 'M', {
       children: ['father'],
@@ -336,9 +336,9 @@ describe('calculateKinship', () => {
 
     const data = [paternalGrandpa, father, maternalGrandma, mother, A];
 
-    // BUG: direct-line grandparents (isDirectLine=true) → side='direct' → no genDiff=2 entry → fallback
-    expect(calculateKinship('A', 'paternal_grandpa', data)?.term).toBe('Họ hàng (2 đời)');
-    expect(calculateKinship('A', 'maternal_grandma', data)?.term).toBe('Họ hàng (2 đời)');
+    // FIXED: direct-line genDiff≥2 now resolves side from first parent's gender
+    expect(calculateKinship('A', 'paternal_grandpa', data)?.term).toBe('Ông nội');
+    expect(calculateKinship('A', 'maternal_grandma', data)?.term).toBe('Bà ngoại');
   });
 
   // ── Test 12: Cháu (nephew/niece, collateral -1 gen) ───────────────────────
@@ -378,5 +378,98 @@ describe('calculateKinship', () => {
     const data = [personA, personB];
 
     expect(calculateKinship('personA', 'personB', data)).toBeNull();
+  });
+
+  // ── IN-LAW TESTS (terminal spouse edge) ──────────────────────────────────
+
+  it('in-law: son\'s wife \u2192 Con d\u00e2u', () => {
+    const parent = makePerson('parent', 'M', { children: ['son'] });
+    const son = makePerson('son', 'M', { parents: ['parent'], spouses: ['daughter_in_law'] });
+    const daughterInLaw = makePerson('daughter_in_law', 'F', { spouses: ['son'] });
+    const data = [parent, son, daughterInLaw];
+    expect(calculateKinship('parent', 'daughter_in_law', data)?.term).toBe('Con d\u00e2u');
+  });
+
+  it('in-law: daughter\'s husband \u2192 Con r\u1ec3', () => {
+    const parent = makePerson('parent', 'F', { children: ['daughter'] });
+    const daughter = makePerson('daughter', 'F', { parents: ['parent'], spouses: ['son_in_law'] });
+    const sonInLaw = makePerson('son_in_law', 'M', { spouses: ['daughter'] });
+    const data = [parent, daughter, sonInLaw];
+    expect(calculateKinship('parent', 'son_in_law', data)?.term).toBe('Con r\u1ec3');
+  });
+
+  it('in-law: ch\u00fa\'s wife \u2192 Th\u00edm', () => {
+    const grandpa = makePerson('grandpa', 'M', { children: ['father', 'uncle'], generation_number: 1 });
+    const father = makePerson('father', 'M', { parents: ['grandpa'], children: ['A'], generation_number: 2, birth_year: 1955 });
+    const uncle = makePerson('uncle', 'M', { parents: ['grandpa'], spouses: ['thim'], generation_number: 2, birth_year: 1960 });
+    const thim = makePerson('thim', 'F', { spouses: ['uncle'] });
+    const A = makePerson('A', 'M', { parents: ['father'], generation_number: 3 });
+    const data = [grandpa, father, uncle, thim, A];
+    expect(calculateKinship('A', 'thim', data)?.term).toBe('Th\u00edm');
+  });
+
+  it('in-law: c\u00f4\'s husband \u2192 D\u01b0\u1ee3ng', () => {
+    const grandpa = makePerson('grandpa', 'M', { children: ['father', 'co'], generation_number: 1 });
+    const father = makePerson('father', 'M', { parents: ['grandpa'], children: ['A'], generation_number: 2, birth_year: 1955 });
+    const co = makePerson('co', 'F', { parents: ['grandpa'], spouses: ['duong'], generation_number: 2, birth_year: 1960 });
+    const duong = makePerson('duong', 'M', { spouses: ['co'] });
+    const A = makePerson('A', 'M', { parents: ['father'], generation_number: 3 });
+    const data = [grandpa, father, co, duong, A];
+    expect(calculateKinship('A', 'duong', data)?.term).toBe('D\u01b0\u1ee3ng');
+  });
+
+  it('in-law: c\u1eadu\'s wife \u2192 M\u1ee3', () => {
+    const grandma = makePerson('grandma', 'F', { children: ['mother', 'cau'], generation_number: 1 });
+    const mother = makePerson('mother', 'F', { parents: ['grandma'], children: ['A'], generation_number: 2, birth_year: 1960 });
+    const cau = makePerson('cau', 'M', { parents: ['grandma'], spouses: ['mo'], generation_number: 2, birth_year: 1958 });
+    const mo = makePerson('mo', 'F', { spouses: ['cau'] });
+    const A = makePerson('A', 'M', { parents: ['mother'], generation_number: 3 });
+    const data = [grandma, mother, cau, mo, A];
+    expect(calculateKinship('A', 'mo', data)?.term).toBe('M\u1ee3');
+  });
+
+  it('in-law: older brother\'s wife (collateral) → Chị dâu họ (nội)', () => {
+    const parent = makePerson('parent', 'M', { children: ['anh', 'em'] });
+    const anh = makePerson('anh', 'M', { parents: ['parent'], spouses: ['chi_dau'], birth_year: 1985, generation_number: 2 });
+    const em = makePerson('em', 'M', { parents: ['parent'], birth_year: 1990, generation_number: 2 });
+    const chiDau = makePerson('chi_dau', 'F', { spouses: ['anh'] });
+    const data = [parent, anh, em, chiDau];
+    expect(calculateKinship('em', 'chi_dau', data)?.term).toBe('Chị dâu họ (nội)');
+  });
+
+  it('in-law: older sister\'s husband (collateral) → Anh rể họ (nội)', () => {
+    const parent = makePerson('parent', 'M', { children: ['chi', 'em'] });
+    const chi = makePerson('chi', 'F', { parents: ['parent'], spouses: ['anh_re'], birth_year: 1985, generation_number: 2 });
+    const em = makePerson('em', 'M', { parents: ['parent'], birth_year: 1990, generation_number: 2 });
+    const anhRe = makePerson('anh_re', 'M', { spouses: ['chi'] });
+    const data = [parent, chi, em, anhRe];
+    expect(calculateKinship('em', 'anh_re', data)?.term).toBe('Anh rể họ (nội)');
+  });
+
+  // ── SPOUSE'S RELATIVE TESTS (initial spouse edge) ─────────────────────
+
+  it('spouse-relative: wife\'s father \u2192 B\u1ed1 v\u1ee3', () => {
+    const fatherInLaw = makePerson('father_in_law', 'M', { children: ['wife'] });
+    const wife = makePerson('wife', 'F', { parents: ['father_in_law'], spouses: ['husband'] });
+    const husband = makePerson('husband', 'M', { spouses: ['wife'] });
+    const data = [fatherInLaw, wife, husband];
+    expect(calculateKinship('husband', 'father_in_law', data)?.term).toBe('B\u1ed1 v\u1ee3');
+  });
+
+  it('spouse-relative: husband\'s mother \u2192 M\u1eb9 ch\u1ed3ng', () => {
+    const motherInLaw = makePerson('mother_in_law', 'F', { children: ['husband'] });
+    const husband = makePerson('husband', 'M', { parents: ['mother_in_law'], spouses: ['wife'] });
+    const wife = makePerson('wife', 'F', { spouses: ['husband'] });
+    const data = [motherInLaw, husband, wife];
+    expect(calculateKinship('wife', 'mother_in_law', data)?.term).toBe('M\u1eb9 ch\u1ed3ng');
+  });
+
+  it('spouse-relative: wife\'s older brother (collateral) → Anh họ (nội) vợ', () => {
+    const parent = makePerson('parent', 'M', { children: ['brother', 'wife'] });
+    const brother = makePerson('brother', 'M', { parents: ['parent'], birth_year: 1985, generation_number: 2 });
+    const wife = makePerson('wife', 'F', { parents: ['parent'], spouses: ['husband'], birth_year: 1990, generation_number: 2 });
+    const husband = makePerson('husband', 'M', { spouses: ['wife'] });
+    const data = [parent, brother, wife, husband];
+    expect(calculateKinship('husband', 'brother', data)?.term).toBe('Anh họ (nội) vợ');
   });
 });

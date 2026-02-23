@@ -124,6 +124,82 @@ TERMS.set(key({ genDiff: -1, side: 'maternal', gender: 'F' }), 'Cháu gái');
 // ── Spouse ─────────────────────────────────────────────────────────────────
 TERMS.set('spouse:M', 'Chồng');
 TERMS.set('spouse:F', 'Vợ');
+// ── In-law term mapping ────────────────────────────────────────────────────
+// Maps: blood-relative term → in-law term, keyed by target gender.
+// Used when BFS path ends with a spouse edge: the blood relative is the person
+// BEFORE the spouse edge, and we convert their term to the in-law equivalent.
+
+const IN_LAW_TERMS = new Map<string, string>();
+
+// Child's spouse (con dâu / con rể)
+IN_LAW_TERMS.set('Con trai:F', 'Con dâu');
+IN_LAW_TERMS.set('Con gái:M', 'Con rể');
+
+// Grandchild's spouse (cháu dâu / cháu rể)
+IN_LAW_TERMS.set('Cháu trai:F', 'Cháu dâu');
+IN_LAW_TERMS.set('Cháu gái:M', 'Cháu rể');
+
+// Great-grandchild's spouse
+IN_LAW_TERMS.set('Chắt trai:F', 'Chắt dâu');
+IN_LAW_TERMS.set('Chắt gái:M', 'Chắt rể');
+
+// Sibling's spouse (anh/chị/em dâu/rể)
+IN_LAW_TERMS.set('Anh:F', 'Chị dâu');
+IN_LAW_TERMS.set('Chị:M', 'Anh rể');
+IN_LAW_TERMS.set('Em trai:F', 'Em dâu');
+IN_LAW_TERMS.set('Em gái:M', 'Em rể');
+
+// Cousin's spouse
+IN_LAW_TERMS.set('Anh họ (nội):F', 'Chị dâu họ (nội)');
+IN_LAW_TERMS.set('Chị họ (nội):M', 'Anh rể họ (nội)');
+IN_LAW_TERMS.set('Em họ trai (nội):F', 'Em dâu họ (nội)');
+IN_LAW_TERMS.set('Em họ gái (nội):M', 'Em rể họ (nội)');
+IN_LAW_TERMS.set('Anh họ (ngoại):F', 'Chị dâu họ (ngoại)');
+IN_LAW_TERMS.set('Chị họ (ngoại):M', 'Anh rể họ (ngoại)');
+IN_LAW_TERMS.set('Em họ trai (ngoại):F', 'Em dâu họ (ngoại)');
+IN_LAW_TERMS.set('Em họ gái (ngoại):M', 'Em rể họ (ngoại)');
+
+// Paternal uncle/aunt's spouse (thím, dượng, bác dâu)
+IN_LAW_TERMS.set('Chú:F', 'Thím');
+IN_LAW_TERMS.set('Cô:M', 'Dượng');
+IN_LAW_TERMS.set('Bác trai:F', 'Bác dâu');
+IN_LAW_TERMS.set('Bác gái:M', 'Bác rể');
+
+// Maternal uncle/aunt's spouse (mợ, dượng)
+IN_LAW_TERMS.set('Cậu:F', 'Mợ');
+IN_LAW_TERMS.set('Dì:M', 'Dượng');
+
+// ── Spouse's relative term mapping ──────────────────────────────────────────
+// Used when BFS path STARTS with a spouse edge: B is a blood relative of A's spouse.
+// Key: bloodTerm (B's relation to A's spouse) + ':' + A's spouse gender
+
+const SPOUSE_RELATIVE_TERMS = new Map<string, string>();
+
+// Spouse's parent (bố/mẹ vợ/chồng)
+SPOUSE_RELATIVE_TERMS.set('Cha:F', 'Bố vợ');
+SPOUSE_RELATIVE_TERMS.set('Cha:M', 'Bố chồng');
+SPOUSE_RELATIVE_TERMS.set('Mẹ:F', 'Mẹ vợ');
+SPOUSE_RELATIVE_TERMS.set('Mẹ:M', 'Mẹ chồng');
+
+// Spouse's sibling
+SPOUSE_RELATIVE_TERMS.set('Anh:F', 'Anh vợ');
+SPOUSE_RELATIVE_TERMS.set('Anh:M', 'Anh chồng');
+SPOUSE_RELATIVE_TERMS.set('Chị:F', 'Chị vợ');
+SPOUSE_RELATIVE_TERMS.set('Chị:M', 'Chị chồng');
+SPOUSE_RELATIVE_TERMS.set('Em trai:F', 'Em vợ');
+SPOUSE_RELATIVE_TERMS.set('Em trai:M', 'Em chồng');
+SPOUSE_RELATIVE_TERMS.set('Em gái:F', 'Em vợ');
+SPOUSE_RELATIVE_TERMS.set('Em gái:M', 'Em chồng');
+
+// Spouse's grandparent
+SPOUSE_RELATIVE_TERMS.set('Ông nội:F', 'Ông nội vợ');
+SPOUSE_RELATIVE_TERMS.set('Ông nội:M', 'Ông nội chồng');
+SPOUSE_RELATIVE_TERMS.set('Bà nội:F', 'Bà nội vợ');
+SPOUSE_RELATIVE_TERMS.set('Bà nội:M', 'Bà nội chồng');
+SPOUSE_RELATIVE_TERMS.set('Ông ngoại:F', 'Ông ngoại vợ');
+SPOUSE_RELATIVE_TERMS.set('Ông ngoại:M', 'Ông ngoại chồng');
+SPOUSE_RELATIVE_TERMS.set('Bà ngoại:F', 'Bà ngoại vợ');
+SPOUSE_RELATIVE_TERMS.set('Bà ngoại:M', 'Bà ngoại chồng');
 
 /**
  * Look up Vietnamese kinship term.
@@ -162,4 +238,34 @@ export function lookupKinshipTerm(
 
 export function lookupSpouseTerm(gender: Gender): string {
   return TERMS.get(`spouse:${gender}`) ?? 'Vợ/Chồng';
+}
+
+/**
+ * Look up in-law term when BFS path ends with a spouse edge.
+ * @param bloodRelativeTerm - the kinship term of the blood relative (person before spouse edge)
+ * @param targetGender - gender of the actual target person (the spouse)
+ * @returns the in-law term, or a generic fallback like "Vợ/Chồng [bloodTerm]"
+ */
+export function lookupInLawTerm(bloodRelativeTerm: string, targetGender: Gender): string {
+  const inLaw = IN_LAW_TERMS.get(`${bloodRelativeTerm}:${targetGender}`);
+  if (inLaw) return inLaw;
+
+  // Generic fallback: "Vợ/Chồng [bloodTerm]"
+  const spouseWord = targetGender === 'F' ? 'Vợ' : 'Chồng';
+  return `${spouseWord} ${bloodRelativeTerm.charAt(0).toLowerCase()}${bloodRelativeTerm.slice(1)}`;
+}
+
+/**
+ * Look up term for a blood relative of A's spouse (path starts with spouse edge).
+ * @param relativeTermToSpouse - B's kinship term relative to A's spouse
+ * @param spouseGender - gender of A's spouse (the intermediate person)
+ * @returns the spouse-relative term, or a generic fallback
+ */
+export function lookupSpouseRelativeTerm(relativeTermToSpouse: string, spouseGender: Gender): string {
+  const term = SPOUSE_RELATIVE_TERMS.get(`${relativeTermToSpouse}:${spouseGender}`);
+  if (term) return term;
+
+  // Generic fallback
+  const spouseWord = spouseGender === 'F' ? 'vợ' : 'chồng';
+  return `${relativeTermToSpouse} ${spouseWord}`;
 }
