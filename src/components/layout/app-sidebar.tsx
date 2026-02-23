@@ -45,7 +45,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="h-14 justify-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <AppLogo size={24} />
+          <AppLogo size={40} />
           <span>Gia Phả Online</span>
         </Link>
       </SidebarHeader>

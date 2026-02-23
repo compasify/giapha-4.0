@@ -16,7 +16,7 @@ export default async function LandingLayout({
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <AppLogo size={24} />
+            <AppLogo size={40} />
             <span className="text-vn-red-dark">Gia Phả Online</span>
           </Link>
           <LandingNav />
