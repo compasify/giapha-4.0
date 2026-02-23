@@ -28,93 +28,93 @@
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Zoom & Pan | Thu phóng, kéo thả toàn bộ cây bằng chuột hoặc trackpad |
-| Minimap | Bản đồ thu nhỏ ở góc màn hình giúp điều hướng nhanh |
-| Tập trung thành viên | Click vào tên ở bất kỳ đâu để cây tự động di chuyển và focus vào thành viên đó |
-| Highlight đường máu mủ | Click vào thành viên để highlight toàn bộ chuỗi tổ tiên — hậu duệ |
-| Xem theo thế hệ | Thanh lọc theo thế hệ (Generation Filter) để ẩn/hiện từng tầng |
-| Chế độ xem rút gọn | Toggle "Compact Mode" để hiển thị tên ngắn gọn, tiết kiệm không gian |
-| Drag & Drop đổi cha/mẹ | Kéo thẻ thành viên sang thẻ khác để tái cấu trúc cây |
-| Popup tiểu sử | Hover vào thẻ thành viên để xem nhanh thông tin (ảnh, ngày sinh, tiểu sử) |
+| 🔍 Zoom & Pan | Thu phóng, kéo thả toàn bộ cây bằng chuột hoặc trackpad |
+| 🗺️ Minimap | Bản đồ thu nhỏ ở góc màn hình giúp điều hướng nhanh |
+| 🎯 Tập trung thành viên | Click vào tên ở bất kỳ đâu để cây tự động di chuyển và focus vào thành viên đó |
+| ✨ Highlight đường máu mủ | Click vào thành viên để highlight toàn bộ chuỗi tổ tiên — hậu duệ |
+| 🔢 Xem theo thế hệ | Thanh lọc theo thế hệ (Generation Filter) để ẩn/hiện từng tầng |
+| 📐 Chế độ xem rút gọn | Toggle "Compact Mode" để hiển thị tên ngắn gọn, tiết kiệm không gian |
+| 🖱️ Drag & Drop đổi cha/mẹ | Kéo thẻ thành viên sang thẻ khác để tái cấu trúc cây |
+| 💬 Popup tiểu sử | Hover vào thẻ thành viên để xem nhanh thông tin (ảnh, ngày sinh, tiểu sử) |
 
 ### 👤 Quản lý thành viên
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Thêm thành viên | Thêm trực tiếp từ cây hoặc qua form đầy đủ |
-| Chỉnh sửa thông tin | Tên, ảnh đại diện, ngày sinh/mất (dương & âm lịch), giới tính, tiểu sử |
-| Xóa thành viên | Xóa kèm cảnh báo ảnh hưởng đến cây |
-| Ảnh đại diện | Upload ảnh hoặc dùng avatar mặc định theo giới tính |
-| Tên Việt Nam đầy đủ | Họ, tên đệm, tên — hiển thị đúng thứ tự văn hóa Việt |
-| Thứ tự anh chị em | Sắp xếp thứ tự hiển thị trong gia đình (con trưởng, thứ...) |
+| ➕ Thêm thành viên | Thêm trực tiếp từ cây hoặc qua form đầy đủ |
+| ✏️ Chỉnh sửa thông tin | Tên, ảnh đại diện, ngày sinh/mất (dương & âm lịch), giới tính, tiểu sử |
+| 🗑️ Xóa thành viên | Xóa kèm cảnh báo ảnh hưởng đến cây |
+| 🖼️ Ảnh đại diện | Upload ảnh hoặc dùng avatar mặc định theo giới tính |
+| 🇻🇳 Tên Việt Nam đầy đủ | Họ, tên đệm, tên — hiển thị đúng thứ tự văn hóa Việt |
+| 🔢 Thứ tự anh chị em | Sắp xếp thứ tự hiển thị trong gia đình (con trưởng, thứ...) |
 
 ### 👨‍👩‍👧‍👦 Quan hệ gia đình
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Quan hệ cha/mẹ - con | Thiết lập quan hệ cha mẹ sinh học hoặc nuôi dưỡng |
-| Quan hệ vợ/chồng | Hỗ trợ nhiều cuộc hôn nhân (có ngày kết hôn, ly hôn) |
-| Trạng thái hôn nhân | Đang kết hôn / Đã ly hôn / Đã góa |
-| Nuôi dưỡng | Đánh dấu quan hệ nuôi dưỡng (adoptive) riêng biệt |
-| Tìm tổ tiên chung | Tự động tính toán và hiển thị tổ tiên chung giữa 2 thành viên |
+| 👨‍👧 Quan hệ cha/mẹ - con | Thiết lập quan hệ cha mẹ sinh học hoặc nuôi dưỡng |
+| 💍 Quan hệ vợ/chồng | Hỗ trợ nhiều cuộc hôn nhân (có ngày kết hôn, ly hôn) |
+| 💔 Trạng thái hôn nhân | Đang kết hôn / Đã ly hôn / Đã góa |
+| 🤝 Nuôi dưỡng | Đánh dấu quan hệ nuôi dưỡng (adoptive) riêng biệt |
+| 🧬 Tìm tổ tiên chung | Tự động tính toán và hiển thị tổ tiên chung giữa 2 thành viên |
 
 ### 🗣️ Xưng hô Việt Nam
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Tính xưng hô tự động | Tự động tính từ "Tôi" (người dùng chọn) đến mọi thành viên trong cây |
-| Xưng hô 2 chiều | Hiển thị cả "Tôi gọi họ là X" và "Họ gọi tôi là Y" |
-| Hỗ trợ miền | Bắc / Trung / Nam với bộ từ xưng hô khác nhau |
-| Tùy chỉnh xưng hô | Override thủ công cho từng thành viên nếu tính sai hoặc theo tập tục địa phương |
-| Panel xưng hô | Cửa sổ riêng hiển thị toàn bộ bảng xưng hô theo cây |
+| 🤖 Tính xưng hô tự động | Tự động tính từ "Tôi" (người dùng chọn) đến mọi thành viên trong cây |
+| ↔️ Xưng hô 2 chiều | Hiển thị cả "Tôi gọi họ là X" và "Họ gọi tôi là Y" |
+| 🗺️ Hỗ trợ miền | Bắc / Trung / Nam với bộ từ xưng hô khác nhau |
+| ✍️ Tùy chỉnh xưng hô | Override thủ công cho từng thành viên nếu tính sai hoặc theo tập tục địa phương |
+| 📊 Panel xưng hô | Cửa sổ riêng hiển thị toàn bộ bảng xưng hô theo cây |
 
 ### 📅 Âm lịch & Ngày tháng
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Nhập ngày âm lịch | Nhập ngày sinh/mất theo lịch Âm trực tiếp |
-| Tháng nhuận | Hỗ trợ tháng nhuận âm lịch (ví dụ: tháng 4 nhuận) |
-| Chuyển đổi tự động | Tự động chuyển đổi giữa dương lịch và âm lịch |
-| Hiển thị song song | Hiển thị cả ngày dương và ngày âm trên thẻ thành viên |
+| 🌙 Nhập ngày âm lịch | Nhập ngày sinh/mất theo lịch Âm trực tiếp |
+| 🔄 Tháng nhuận | Hỗ trợ tháng nhuận âm lịch (ví dụ: tháng 4 nhuận) |
+| ⚡ Chuyển đổi tự động | Tự động chuyển đổi giữa dương lịch và âm lịch |
+| 📆 Hiển thị song lang | Hiển thị cả ngày dương và ngày âm trên thẻ thành viên |
 
 ### 📋 Sự kiện gia đình (19 loại)
 
 | Nhóm | Loại sự kiện |
 |------|-------------|
-| Cá nhân | Sinh, Mất, Đặt tên, Trưởng thành, Nghỉ hưu |
-| Hôn nhân | Kết hôn, Ly hôn, Đính hôn, Ly thân |
-| Tôn giáo | Rửa tội, Thành hôn, Thụ phong, Bar Mitzvah |
-| Giáo dục | Tốt nghiệp, Nhập học |
-| Di cư | Di cư, Nhập tịch |
-| Quân sự | Tham chiến, Phục viên |
+| 👤 Cá nhân | Sinh, Mất, Đặt tên, Trưởng thành, Nghỉ hưu |
+| 💒 Hôn nhân | Kết hôn, Ly hôn, Đính hôn, Ly thân |
+| ⛪ Tôn giáo | Rửa tội, Thành hôn, Thụ phong, Bar Mitzvah |
+| 🎓 Giáo dục | Tốt nghiệp, Nhập học |
+| ✈️ Di cư | Di cư, Nhập tịch |
+| 🎖️ Quân sự | Tham chiến, Phục viên |
 
 ### 📤 Xuất & Chia sẻ
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Xuất PDF | Xuất toàn bộ cây thành file PDF chất lượng cao |
-| Xuất ảnh PNG | Chụp màn hình cây thành ảnh PNG độ phân giải cao |
-| Xuất GEDCOM | Định dạng chuẩn quốc tế để chuyển sang phần mềm gia phả khác |
-| Nhập GEDCOM | Import dữ liệu từ phần mềm khác vào |
-| Chia sẻ link | Tạo link chia sẻ với quyền xem (không cần đăng nhập) |
-| Mã QR | Tạo mã QR trỏ đến trang gia phả |
+| 📄 Xuất PDF | Xuất toàn bộ cây thành file PDF chất lượng cao |
+| 🖼️ Xuất ảnh PNG | Chụp màn hình cây thành ảnh PNG độ phân giải cao |
+| 💾 Xuất GEDCOM | Định dạng chuẩn quốc tế để chuyển sang phần mềm gia phả khác |
+| 📥 Nhập GEDCOM | Import dữ liệu từ phần mềm khác vào |
+| 🔗 Chia sẻ link | Tạo link chia sẻ với quyền xem (không cần đăng nhập) |
+| 📱 Mã QR | Tạo mã QR trỏ đến trang gia phả |
 
 ### 🔒 Bảo mật & Quyền truy cập
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Mã bảo mật | Đặt mã PIN để khóa gia phả, người xem cần nhập mã |
-| Công khai / Riêng tư | Toggle chế độ công khai (ai cũng xem) hoặc riêng tư (chỉ chủ sở hữu) |
-| Đa người dùng | Nhiều tài khoản, đăng nhập bằng email/password hoặc OAuth |
+| 🔑 Mã bảo mật | Đặt mã PIN để khóa gia phả, người xem cần nhập mã |
+| 👁️ Công khai / Riêng tư | Toggle chế độ công khai (ai cũng xem) hoặc riêng tư (chỉ chủ sở hữu) |
+| 👥 Đa người dùng | Nhiều tài khoản, đăng nhập bằng email/password hoặc OAuth |
 
 ### 📚 Đa gia phả
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| Tạo nhiều gia phả | Mỗi tài khoản quản lý nhiều cây gia phả độc lập |
-| Xem kết hợp | Xem đồng thời nhiều gia phả trên cùng một màn hình |
-| Gộp gia phả | Wizard 5 bước để gộp 2 gia phả thành 1, tự động phát hiện trùng lặp |
-| Tách nhánh | Tạo gia phả mới từ một nhánh của cây hiện tại |
+| 📂 Tạo nhiều gia phả | Mỗi tài khoản quản lý nhiều cây gia phả độc lập |
+| 🪟 Xem kết hợp | Xem đồng thời nhiều gia phả trên cùng một màn hình |
+| 🔀 Gộp gia phả | Wizard 5 bước để gộp 2 gia phả thành 1, tự động phát hiện trùng lặp |
+| ✂️ Tách nhánh | Tạo gia phả mới từ một nhánh của cây hiện tại |
 
 ### ⌨️ Phím tắt & Điều hướng
 
