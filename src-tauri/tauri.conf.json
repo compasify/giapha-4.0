@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Gia Phả Online",
+  "productName": "Gia Pha Online",
   "version": "0.1.0",
   "identifier": "vn.giaphaonline.app",
   "build": {
