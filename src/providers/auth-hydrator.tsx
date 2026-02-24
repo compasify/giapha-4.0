@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore, initLocalUser } from '@/stores/auth-store';
 import type { AuthUser } from '@/app/actions/auth-actions';
 
 export function AuthHydrator({ user }: { user: AuthUser | null }) {
@@ -14,6 +14,8 @@ export function AuthHydrator({ user }: { user: AuthUser | null }) {
     } else {
       clearUser();
     }
+    // Auto-init local user for desktop mode
+    initLocalUser();
   }, [user, setUser, clearUser]);
 
   return null;

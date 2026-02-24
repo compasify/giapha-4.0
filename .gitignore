@@ -42,3 +42,16 @@ next-env.d.ts
 .idea
 docs
 plans
+
+# SQLite database files
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Tauri sidecar binaries (built in CI)
+binaries/
+
+# Prisma generated client (regenerated via prisma generate)
+src/generated/

@@ -5,6 +5,31 @@ import { NextRequest, NextResponse } from 'next/server';
 const RAILS_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 async function proxyRequest(req: NextRequest, params: { path: string[] }) {
+  // --- LOCAL MODE: internal forward to /api/local/ ---
+  if (process.env.DATA_MODE === 'local') {
+    const localPath = params.path.join('/');
+    const search = req.nextUrl.search;
+    const localUrl = new URL(`/api/local/${localPath}${search}`, req.url);
+
+    let body: string | undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      body = await req.text();
+    }
+
+    const res = await fetch(localUrl.toString(), {
+      method: req.method,
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    const responseBody = await res.text();
+    return new NextResponse(responseBody, {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // --- API MODE: forward to Rails (unchanged) ---
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
 

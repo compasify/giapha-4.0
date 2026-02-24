@@ -1,0 +1,100 @@
+// Prisma v7 schema — mirror Rails models cho local (SQLite) mode
+// Field names dùng camelCase (TypeScript convention), @map snake_case (DB column names)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Mirror của Rails Lineage model
+model Lineage {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt      @map("updated_at")
+  persons     Person[]
+  events      Event[]
+
+  @@map("lineages")
+}
+
+// Mirror của Rails Person model
+model Person {
+  id               Int            @id @default(autoincrement())
+  lineageId        Int            @map("lineage_id")
+  ho               String?
+  tenDem           String?        @map("ten_dem")
+  ten              String
+  tenThuongGoi     String?        @map("ten_thuong_goi")
+  tenHuy           String?        @map("ten_huy")
+  tenThuy          String?        @map("ten_thuy")
+  tenHieu          String?        @map("ten_hieu")
+  hanNomName       String?        @map("han_nom_name")
+  gender           String?        // "male" | "female" | "unknown" | "other"
+  isAlive          Boolean        @default(true) @map("is_alive")
+  generationNumber Int?           @map("generation_number")
+  branchId         Int?           @map("branch_id")
+  biography        String?
+  avatar           String?
+  birthDateJson    String?        @map("birth_date_json")    // JSON string of FlexibleDate
+  deathDateJson    String?        @map("death_date_json")    // JSON string of FlexibleDate
+  birthPlace       String?        @map("birth_place")
+  deathPlace       String?        @map("death_place")
+  burialPlace      String?        @map("burial_place")
+  burialLatitude   Float?         @map("burial_latitude")
+  burialLongitude  Float?         @map("burial_longitude")
+  coverPhoto       String?        @map("cover_photo")
+  privacyLevel     Int?           @map("privacy_level")
+  birthOrder       Int            @default(0) @map("birth_order")
+  notes            String?
+  phone            String?
+  email            String?
+  address          String?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt      @map("updated_at")
+  lineage          Lineage        @relation(fields: [lineageId], references: [id], onDelete: Cascade)
+  relationsFrom    Relationship[] @relation("PersonFrom")
+  relationsTo      Relationship[] @relation("PersonTo")
+
+  @@map("persons")
+}
+
+// Mirror của Rails Relationship model
+model Relationship {
+  id      Int    @id @default(autoincrement())
+  fromId  Int    @map("from_id")
+  toId    Int    @map("to_id")
+  relType String @map("rel_type")  // RelationshipType string value
+  notes   String?
+  from    Person @relation("PersonFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to      Person @relation("PersonTo",   fields: [toId],   references: [id], onDelete: Cascade)
+
+  @@map("relationships")
+}
+
+// Mirror của Rails Event model
+model Event {
+  id                 Int      @id @default(autoincrement())
+  lineageId          Int      @map("lineage_id")
+  title              String?
+  eventType          String   @map("event_type")       // EventType string value
+  eventSubtype       String?  @map("event_subtype")
+  description        String?
+  notes              String?
+  location           String?
+  isRecurring        Boolean  @default(false) @map("is_recurring")
+  recurrenceType     String?  @map("recurrence_type")
+  reminderEnabled    Boolean  @default(false) @map("reminder_enabled")
+  reminderDaysBefore Int?     @map("reminder_days_before")
+  privacyLevel       Int?     @map("privacy_level")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt      @map("updated_at")
+  lineage            Lineage  @relation(fields: [lineageId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}

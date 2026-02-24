@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { LOCAL_FAKE_USER } from '@/lib/auth/local-user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -33,6 +34,15 @@ interface ActionResult<T = null> {
 }
 
 export async function loginAction(payload: LoginPayload): Promise<ActionResult<AuthUser>> {
+  // Bypass auth cho local/desktop mode
+  if (process.env.LOCAL_AUTH_DISABLED === 'true') {
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', 'local-mode-token', {
+      httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 365,
+    });
+    return { success: true, data: LOCAL_FAKE_USER };
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/sign_in`, {
       method: 'POST',
@@ -149,6 +159,11 @@ export async function logoutAction(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
+  // Bypass auth cho local/desktop mode
+  if (process.env.LOCAL_AUTH_DISABLED === 'true') {
+    return LOCAL_FAKE_USER;
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
