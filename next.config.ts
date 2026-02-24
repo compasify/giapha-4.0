@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     '/**': [
       './src/generated/prisma/**/*',
       './prisma/migrations/**/*',
+      './prisma/schema.prisma',
     ],
   },
   // better-sqlite3 is a native C++ addon — must be external

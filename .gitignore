@@ -50,8 +50,10 @@ data/
 *.db-wal
 *.db-shm
 
-# Tauri sidecar binaries (built in CI)
-binaries/
+# Tauri sidecar (built locally and in CI)
+src-tauri/standalone/
+src-tauri/binaries/
+src-tauri/target/
 
 # Prisma generated client (regenerated via prisma generate)
 src/generated/
