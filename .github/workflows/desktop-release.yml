@@ -1,0 +1,118 @@
+name: Desktop Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  # Next.js standalone build needs these for local-mode compilation
+  DATA_MODE: local
+  DATABASE_URL: file:./data/family.db
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-14
+            rust-target: aarch64-apple-darwin
+            tauri-args: '--target aarch64-apple-darwin'
+            label: 'macOS ARM'
+
+          - platform: macos-13
+            rust-target: x86_64-apple-darwin
+            tauri-args: '--target x86_64-apple-darwin'
+            label: 'macOS Intel'
+
+          - platform: ubuntu-22.04
+            rust-target: x86_64-unknown-linux-gnu
+            tauri-args: ''
+            label: 'Linux x64'
+
+          - platform: windows-latest
+            rust-target: x86_64-pc-windows-msvc
+            tauri-args: ''
+            label: 'Windows x64'
+
+    runs-on: ${{ matrix.platform }}
+    name: Build ${{ matrix.label }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Setup Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            src-tauri/target
+          key: ${{ matrix.platform }}-cargo-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.platform }}-cargo-
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libgtk-3-dev \
+            libssl-dev
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      # tauri-action runs `tauri build` which triggers beforeBuildCommand
+      # from tauri.conf.json: "npm run build && npm run prepare:sidecar"
+      # Env vars (DATA_MODE, DATABASE_URL) are set at job level and propagate
+      - name: Build Tauri app and publish to GitHub Release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Gia Phả Online ${{ github.ref_name }}'
+          releaseBody: |
+            ## Gia Phả Online ${{ github.ref_name }}
+
+            ### Tải về
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `.dmg` aarch64 |
+            | macOS (Intel) | `.dmg` x64 |
+            | Linux | `.AppImage` / `.deb` |
+            | Windows | `.msi` / `.exe` |
+
+            ### Lưu ý
+            - **macOS**: Chạy `xattr -dr com.apple.quarantine` nếu bị chặn lần đầu
+            - **Windows**: SmartScreen có thể cảnh báo — chọn "Run anyway"
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.tauri-args }}
