@@ -1,19 +1,18 @@
 /**
  * Cross-platform Tauri CLI wrapper.
  * Sets APPIMAGE_EXTRACT_AND_RUN=1 so linuxdeploy works without FUSE (CI containers).
- * Forwards all CLI args to the real `tauri` binary.
+ * Uses shell:true + npx for Windows compatibility (.cmd resolution).
  */
-const { execFileSync } = require('child_process')
-const path = require('path')
+const { spawnSync } = require('child_process')
 
 // Fix linuxdeploy FUSE requirement in CI containers
 process.env.APPIMAGE_EXTRACT_AND_RUN = '1'
 
-const tauriBin = path.join(__dirname, '..', 'node_modules', '.bin', 'tauri')
 const args = process.argv.slice(2)
+const result = spawnSync('npx', ['tauri', ...args], {
+  stdio: 'inherit',
+  env: process.env,
+  shell: true,
+})
 
-try {
-  execFileSync(tauriBin, args, { stdio: 'inherit', env: process.env })
-} catch (e) {
-  process.exit(e.status || 1)
-}
+process.exit(result.status || 0)
