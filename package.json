@@ -16,7 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prepare:sidecar": "node scripts/prepare-sidecar.js",
-    "tauri": "tauri",
+    "tauri": "node scripts/tauri-wrapper.js",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
