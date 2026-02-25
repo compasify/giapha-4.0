@@ -25,10 +25,8 @@ jobs:
             tauri-args: '--target aarch64-apple-darwin'
             label: 'macOS ARM'
 
-          - platform: macos-13
-            rust-target: x86_64-apple-darwin
-            tauri-args: '--target x86_64-apple-darwin'
-            label: 'macOS Intel'
+          # macOS Intel (macos-13) deprecated on GitHub Actions.
+          # Can add back via cross-compile + Node x86_64 download in Phase 2C.
 
           - platform: ubuntu-22.04
             rust-target: x86_64-unknown-linux-gnu
@@ -95,6 +93,7 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         with:
           projectPath: .
           tagName: ${{ github.ref_name }}
@@ -106,7 +105,7 @@ jobs:
             | Platform | File |
             |----------|------|
             | macOS (Apple Silicon) | `.dmg` aarch64 |
-            | macOS (Intel) | `.dmg` x64 |
+
             | Linux | `.AppImage` / `.deb` |
             | Windows | `.msi` / `.exe` |
 

@@ -22,11 +22,12 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:*; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'"
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://localhost:* http://127.0.0.1:* https://github.com https://api.github.com https://objects.githubusercontent.com; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'"
     }
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["deb", "rpm", "dmg", "msi", "nsis"],
     "icon": [
       "icons/32x32.png",
@@ -40,6 +41,14 @@
     ],
     "resources": {
       "standalone/": "standalone/"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE4QUM4QjZDNzNEQzBFNDQKUldSRUR0eHpiSXVzR0hscjRqUVVkeit6TlBpVXF6NmNUdWdDdVZLMG5USW91ZlVIN0hSTiswSzgK",
+      "endpoints": [
+        "https://github.com/compasify/giapha-4.0/releases/latest/download/latest.json"
+      ]
     }
   }
 }

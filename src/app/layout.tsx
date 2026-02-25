@@ -4,6 +4,7 @@ import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
+import { UpdateChecker } from '@/components/desktop/update-checker';
 const inter = Inter({ subsets: ['latin', 'vietnamese'] });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://giapha.online';
@@ -77,6 +78,7 @@ export default function RootLayout({
             {children}
           </TooltipProvider>
           <Toaster />
+          <UpdateChecker />
         </QueryProvider>
       </body>
     </html>

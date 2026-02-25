@@ -76,15 +76,20 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            #[cfg(desktop)]
+            {
+                app.handle()
+                    .plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
+            }
             if !cfg!(debug_assertions) {
                 if let Err(e) = spawn_sidecar(app) {
                     log::error!("Failed to spawn sidecar: {}", e);
                     return Err(e.into());
                 }
             } else {
-                log::info!("Dev mode — skipping sidecar spawn (beforeDevCommand handles it)");
+                log::info!("Dev mode \u{2014} skipping sidecar spawn (beforeDevCommand handles it)");
             }
-
             Ok(())
         })
         .run(tauri::generate_context!())
