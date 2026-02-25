@@ -43,8 +43,8 @@ export function UpdateChecker() {
 }
 
 async function installUpdate(
-  update: Awaited<NonNullable<ReturnType<typeof import('@tauri-apps/plugin-updater').check>>>,
-  relaunch: typeof import('@tauri-apps/plugin-process').relaunch
+  update: NonNullable<Awaited<ReturnType<typeof import('@tauri-apps/plugin-updater').check>>>,
+  relaunch: Awaited<typeof import('@tauri-apps/plugin-process')>['relaunch']
 ) {
   const toastId = toast.loading('Đang tải cập nhật...', { duration: Infinity });
 
