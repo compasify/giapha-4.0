@@ -131,16 +131,32 @@
 
 ## 🚀 Cài đặt
 ### Yêu cầu hệ thống
-- Node.js 18+
-- Backend API (Rails) đang chạy — xem repo backend để cài đặt
+ Node.js 18+
+
+### Backend
+
+Ứng dụng hỗ trợ **2 chế độ backend**, chuyển đổi qua biến môi trường `DATA_MODE`:
+
+| Chế độ | `DATA_MODE` | Mô tả |
+|--------|-------------|-------|
+| **Rails API** | `api` | Kết nối đến backend Rails (cần cài đặt riêng — xem repo `amlich-backend`) |
+| **Next.js built-in** | `local` | Backend tích hợp sẵn (Prisma + SQLite), không cần server ngoài |
+
+> **Mặc định:** `DATA_MODE=api`. Đổi sang `local` để dùng backend Next.js tích hợp — phù hợp cho dev nhanh, demo, hoặc chạy offline.
 
 ### Cài đặt nhanh
+
 ```bash
 # Clone repository
 git clone https://github.com/your-username/family-tree.git
 cd family-tree
 npm install
 cp .env.example .env.local
+```
+
+Chỉnh `.env.local` theo chế độ backend muốn dùng, rồi chạy:
+
+```bash
 npm run dev
 ```
 
@@ -148,11 +164,71 @@ Mở [http://localhost:3000](http://localhost:3000) để xem kết quả.
 
 ### Biến môi trường
 ```env
-# URL của backend API
-NEXT_PUBLIC_API_URL=http://localhost:4000
-# App URL
+# Chế độ data: "api" (Rails backend) hoặc "local" (Next.js built-in, SQLite)
+DATA_MODE=api
+
+# Chỉ cần khi DATA_MODE=local
+DATABASE_URL=file:./data/family.db
+LOCAL_AUTH_DISABLED=false
+NEXT_PUBLIC_LOCAL_AUTH_DISABLED=false
+
+# Chỉ cần khi DATA_MODE=api
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Chung
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME='Gia Phả Online'
 ```
+
+---
+
+## 🐳 Chạy bằng Docker Compose
+
+### Chế độ API (Rails backend)
+
+```bash
+docker compose up -d
+```
+
+### Chế độ Local (SQLite, không cần backend)
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+```
+
+Ứng dụng chạy tại [http://localhost:8006](http://localhost:8006).
+
+---
+
+## 🖥️ App Desktop (Windows / macOS / Linux)
+
+Ứng dụng hỗ trợ build thành **app desktop native** thông qua [Tauri 2](https://v2.tauri.app/), chạy offline với backend SQLite tích hợp.
+
+### Yêu cầu
+- [Rust](https://rustup.rs/) đã cài đặt
+- Xem thêm [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/) cho từng OS
+
+### Chạy dev
+
+```bash
+npm run tauri:dev
+```
+
+### Build app
+
+```bash
+npm run tauri:build
+```
+
+File cài đặt sẽ được tạo tại `src-tauri/target/release/bundle/`:
+
+| OS | Định dạng |
+|-----|-----------|
+| 🪟 Windows | `.msi`, `.exe` (NSIS) |
+| 🍎 macOS | `.dmg` |
+| 🐧 Linux | `.deb`, `.rpm` |
+
+> App desktop có tích hợp **auto-update** — tự kiểm tra và cập nhật phiên bản mới từ GitHub Releases.
 
 ---
 
