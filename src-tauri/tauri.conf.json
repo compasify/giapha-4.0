@@ -45,7 +45,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE4QUM4QjZDNzNEQzBFNDQKUldSRUR0eHpiSXVzR0hscjRqUVVkeit6TlBpVXF6NmNUdWdDdVZLMG5USW91ZlVIN0hSTiswSzgK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDYxRDA4MEE0RDBGREMyMTcKUldRWHd2M1FwSURRWWRjSG1QV3J6SGxTRFFIdWVycVN2V2pHME1WQTVmMWdCY0EvYjF6RnQwTVoK",
       "endpoints": [
         "https://github.com/compasify/giapha-4.0/releases/latest/download/latest.json"
       ]
