@@ -18,3 +18,4 @@ coverage
 next-env.d.ts
 .vercel
 .claude
+src-tauri

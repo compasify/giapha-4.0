@@ -12,6 +12,7 @@ services:
       - "8006:3000"
     environment:
       - NODE_ENV=production
+      - DATA_MODE=api
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 30s

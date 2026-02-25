@@ -1,0 +1,14 @@
+# Override cho chế độ local (SQLite)
+# Dùng: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+services:
+  family-tree:
+    environment:
+      - DATA_MODE=local
+      - DATABASE_URL=file:./data/family.db
+      - LOCAL_AUTH_DISABLED=true
+      - NEXT_PUBLIC_LOCAL_AUTH_DISABLED=true
+    volumes:
+      - family-data:/app/data
+
+volumes:
+  family-data:

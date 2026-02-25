@@ -28,6 +28,9 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 # Disable Next.js telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
 
+
+# Increase Node.js heap for Next.js Turbopack build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN npm run build
 
 # =============================================================================
