@@ -83,20 +83,6 @@ export function UseEverywhereSection() {
           {PLATFORMS.map((platform) => {
             const Icon = platform.icon;
             const isDisabled = platform.href === '#';
-            const Wrapper = platform.external
-              ? 'a'
-              : isDisabled
-                ? 'div'
-                : Link;
-            const wrapperProps = platform.external
-              ? {
-                  href: platform.href,
-                  target: '_blank' as const,
-                  rel: 'noopener noreferrer',
-                }
-              : isDisabled
-                ? {}
-                : { href: platform.href };
 
             return (
               <div
@@ -142,8 +128,8 @@ export function UseEverywhereSection() {
                     >
                       {platform.cta}
                     </Button>
-                  ) : (
-                    <Wrapper {...(wrapperProps as Record<string, unknown>)}>
+                  ) : platform.external ? (
+                    <a href={platform.href} target="_blank" rel="noopener noreferrer">
                       <Button
                         variant="outline"
                         size="sm"
@@ -152,7 +138,18 @@ export function UseEverywhereSection() {
                         {platform.cta}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
-                    </Wrapper>
+                    </a>
+                  ) : (
+                    <Link href={platform.href}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 border-vn-red/20 text-vn-red hover:bg-vn-red/5 hover:border-vn-red/40"
+                      >
+                        {platform.cta}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
                   )}
                 </div>
               </div>
