@@ -18,7 +18,7 @@ export default async function LandingLayout({
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <AppLogo size={40} />
-            <span className="text-vn-red-dark">Gia Phả Online</span>
+            <span className="text-vn-red-dark">Gia Phả 365</span>
           </Link>
           <LandingNav />
         </div>
@@ -29,7 +29,7 @@ export default async function LandingLayout({
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <AppLogo size={16} />
-              <span>© 2026 Gia Phả Online</span>
+              <span>© 2026 Gia Phả 365</span>
               <span className="text-gray-300">·</span>
               <a
                 href="https://github.com/compasify/giapha-4.0"

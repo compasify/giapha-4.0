@@ -98,7 +98,7 @@ jobs:
         with:
           projectPath: .
           tagName: ${{ github.ref_name }}
-          releaseName: 'Gia Phả Online ${{ github.ref_name }}'
+          releaseName: 'Gia Phả 365 ${{ github.ref_name }}'
           releaseBody: |
             ## Gia Phả Online ${{ github.ref_name }}
 

@@ -54,7 +54,7 @@ export default function RegisterPage() {
     <Card className="w-full">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Đăng ký</CardTitle>
-        <CardDescription>Tạo tài khoản Gia Phả Online mới</CardDescription>
+        <CardDescription>Tạo tài khoản Gia Phả 365 mới</CardDescription>
       </CardHeader>
       <CardContent>
         <OAuthButtons />

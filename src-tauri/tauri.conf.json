@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Gia Pha Online",
+  "productName": "Gia Pha 365",
   "version": "0.1.0",
   "identifier": "vn.giaphaonline.app",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Gia Phả Online",
+        "title": "Gia Phả 365",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

@@ -14,7 +14,7 @@ export function AppLogo({ className, size = 20 }: AppLogoProps) {
     return (
         <Image
             src="/logo.svg"
-            alt="Gia Phả Online"
+            alt="Gia Phả 365"
             width={size}
             height={size}
             className={`rounded-[22%] ${className ?? ''}`}

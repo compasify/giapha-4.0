@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 export const metadata: Metadata = {
   title: 'Chính sách bảo mật',
   description:
-    'Chính sách bảo mật của Gia Phả Online — cam kết bảo vệ dữ liệu gia phả và thông tin cá nhân của bạn. Dữ liệu thuộc về bạn.',
+    'Chính sách bảo mật của Gia Phả 365 — cam kết bảo vệ dữ liệu gia phả và thông tin cá nhân của bạn. Dữ liệu thuộc về bạn.',
   keywords: [
     'chính sách bảo mật',
     'gia phả online',
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     'bảo vệ thông tin',
     'GDPR',
     'gia phả trực tuyến',
+    'gia phả 365',
   ],
 };
 
@@ -40,7 +41,7 @@ export default function PrivacyPage() {
         <div className="container mx-auto px-4">
           <article className="prose prose-gray mx-auto max-w-3xl">
             <p className="text-gray-600 leading-relaxed">
-              Tại Gia Phả Online, chúng tôi hiểu rằng dữ liệu gia phả là thông tin nhạy cảm và
+              Tại Gia Phả 365, chúng tôi hiểu rằng dữ liệu gia phả là thông tin nhạy cảm và
               riêng tư của gia đình bạn. Chính sách bảo mật này giải thích cách chúng tôi thu thập,
               sử dụng, lưu trữ và bảo vệ thông tin của bạn khi bạn sử dụng dịch vụ tại
               giapha.online.

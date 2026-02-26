@@ -5,7 +5,7 @@
   <img src="https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css" alt="Tailwind CSS">
 </p>
 
-<h1 align="center">🌳 Gia Phả Online</h1>
+<h1 align="center">🌳 Gia Phả 365</h1>
 
 <p align="center">
   <strong>Ứng dụng web quản lý gia phả trực tuyến dành cho các gia đình Việt Nam</strong><br>
@@ -181,7 +181,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 
 # Chung
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME='Gia Phả Online'
+NEXT_PUBLIC_APP_NAME='Gia Phả 365'
 ```
 
 ---

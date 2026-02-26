@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 export const metadata: Metadata = {
   title: 'Điều khoản sử dụng',
   description:
-    'Điều khoản sử dụng dịch vụ Gia Phả Online — nền tảng quản lý gia phả trực tuyến dành cho người Việt. Quyền và trách nhiệm của người dùng.',
+    'Điều khoản sử dụng dịch vụ Gia Phả 365 — nền tảng quản lý gia phả trực tuyến dành cho người Việt. Quyền và trách nhiệm của người dùng.',
   keywords: [
     'điều khoản sử dụng',
     'gia phả online',
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     'quy định sử dụng',
     'gia phả trực tuyến',
     'quyền người dùng',
+    'gia phả 365',
   ],
 };
 
@@ -39,7 +40,7 @@ export default function TermsPage() {
         <div className="container mx-auto px-4">
           <article className="prose prose-gray mx-auto max-w-3xl">
             <p className="text-gray-600 leading-relaxed">
-              Chào mừng bạn đến với Gia Phả Online (&ldquo;Dịch vụ&rdquo;), nền tảng quản lý gia phả trực
+              Chào mừng bạn đến với Gia Phả 365 (&ldquo;Dịch vụ&rdquo;), nền tảng quản lý gia phả trực
               tuyến được vận hành tại tên miền giapha.online (&ldquo;Trang web&rdquo;). Bằng việc truy cập
               hoặc sử dụng Dịch vụ, bạn đồng ý tuân thủ các điều khoản và điều kiện dưới đây
               (&ldquo;Điều khoản&rdquo;). Nếu bạn không đồng ý với bất kỳ phần nào của Điều khoản này, vui
@@ -52,7 +53,7 @@ export default function TermsPage() {
             <ul className="mt-4 space-y-2 text-gray-600">
               <li>
                 <strong>&ldquo;Chúng tôi&rdquo;</strong>, <strong>&ldquo;Của chúng tôi&rdquo;</strong>: Đội
-                ngũ phát triển và vận hành Gia Phả Online.
+                ngũ phát triển và vận hành Gia Phả 365.
               </li>
               <li>
                 <strong>&ldquo;Bạn&rdquo;</strong>, <strong>&ldquo;Người dùng&rdquo;</strong>: Cá nhân đăng
@@ -123,7 +124,7 @@ export default function TermsPage() {
             <div className="mt-4 space-y-3 text-gray-600 leading-relaxed">
               <p>
                 Giao diện, mã nguồn, thiết kế, logo, thương hiệu và các tài liệu liên quan đến Dịch vụ
-                thuộc quyền sở hữu của Gia Phả Online và được bảo hộ bởi luật sở hữu trí tuệ.
+                thuộc quyền sở hữu của Gia Phả 365 và được bảo hộ bởi luật sở hữu trí tuệ.
               </p>
               <p>
                 Bạn không được sao chép, phân phối, sửa đổi hoặc tạo sản phẩm phái sinh từ bất kỳ phần nào

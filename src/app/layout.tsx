@@ -8,7 +8,7 @@ import { UpdateChecker } from '@/components/desktop/update-checker';
 const inter = Inter({ subsets: ['latin', 'vietnamese'] });
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://giapha.online';
-const APP_NAME = 'Gia Phả Online';
+const APP_NAME = 'Gia Phả 365';
 const APP_DESCRIPTION =
   'Ứng dụng xây dựng gia phả trực tuyến cho gia đình Việt Nam. Quản lý dòng họ, cây gia phả, sự kiện, lịch âm dương tự động chuyển đổi.';
 
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   keywords: [
-    'gia phả', 'gia phả online', 'cây gia phả', 'gia phả trực tuyến',
+    'gia phả', 'gia phả online', 'cây gia phả', 'gia phả trực tuyến', 'gia phả 365',
     'quản lý dòng họ', 'phả hệ', 'family tree', 'lịch âm',
     'xưng hô Việt Nam', 'gia đình Việt Nam', 'dòng họ Việt Nam',
   ],

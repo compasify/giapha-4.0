@@ -197,7 +197,7 @@ export async function exportPdf(
   const footerY = pageHeight - margin;
   pdf.setFontSize(8);
   pdf.setTextColor(150, 150, 150);
-  pdf.text(stripDiacritics(`Xuat tu Gia Pha Online • ${new Date().toLocaleDateString('vi-VN')}`), margin, footerY);
+  pdf.text(stripDiacritics(`Xuat tu Gia Pha 365 • ${new Date().toLocaleDateString('vi-VN')}`), margin, footerY);
   pdf.text(`${paperSize} ${orientation}`, pageWidth - margin, footerY, { align: 'right' });
 
   pdf.save(`${filename}.pdf`);

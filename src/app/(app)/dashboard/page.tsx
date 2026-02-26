@@ -12,7 +12,7 @@ export default async function DashboardPage() {
           Xin chào, {user?.name ?? 'bạn'}!
         </h1>
         <p className="text-muted-foreground">
-          Chào mừng bạn đến với Gia Phả Online
+          Chào mừng bạn đến với Gia Phả 365
         </p>
       </div>
       <DashboardStats />

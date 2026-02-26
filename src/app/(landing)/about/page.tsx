@@ -16,7 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 export const metadata: Metadata = {
   title: 'Giới thiệu',
   description:
-    'Gia Phả Online — nền tảng quản lý gia phả trực tuyến đầu tiên dành riêng cho người Việt. Gìn giữ truyền thống dòng họ qua công nghệ hiện đại.',
+    'Gia Phả 365 — nền tảng quản lý gia phả trực tuyến đầu tiên dành riêng cho người Việt. Gìn giữ truyền thống dòng họ qua công nghệ hiện đại.',
   keywords: [
     'gia phả online',
     'gia phả trực tuyến',
@@ -28,6 +28,7 @@ export const metadata: Metadata = {
     'âm lịch',
     'truyền thống gia đình',
     'gia phả số',
+    'gia phả 365',
   ],
 };
 
@@ -123,7 +124,7 @@ export default function AboutPage() {
               <span className="text-base" role="img" aria-label="đèn lồng">
                 🏮
               </span>
-              <span className="font-medium">Về Gia Phả Online</span>
+              <span className="font-medium">Về Gia Phả 365</span>
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
@@ -133,7 +134,7 @@ export default function AboutPage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-gray-600 sm:text-xl">
-              Gia Phả Online là nền tảng quản lý gia phả trực tuyến đầu tiên được thiết kế
+              Gia Phả 365 là nền tảng quản lý gia phả trực tuyến đầu tiên được thiết kế
               riêng cho các gia đình Việt Nam. Chúng tôi tin rằng mỗi dòng họ đều có một câu
               chuyện đáng được lưu giữ và truyền lại cho muôn đời sau.
             </p>
@@ -152,7 +153,7 @@ export default function AboutPage() {
             <p className="mt-4 text-lg text-gray-600 leading-relaxed">
               Trong nhịp sống hiện đại, nhiều gia đình Việt Nam đang dần mất đi sợi dây kết nối
               với cội nguồn. Cuốn gia phả giấy cũ kỹ phai nhạt theo thời gian, những câu chuyện
-              về ông bà tổ tiên chỉ còn trong ký ức mờ nhạt. Gia Phả Online ra đời để thay đổi
+              về ông bà tổ tiên chỉ còn trong ký ức mờ nhạt. Gia Phả 365 ra đời để thay đổi
               điều đó — biến truyền thống thành di sản số, bền vững qua nhiều thế hệ.
             </p>
           </div>
@@ -186,7 +187,7 @@ export default function AboutPage() {
           <div className="mx-auto max-w-2xl text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
               Tại sao chọn{' '}
-              <span className="text-vn-red">Gia Phả Online?</span>
+              <span className="text-vn-red">Gia Phả 365?</span>
             </h2>
             <p className="mt-4 text-lg text-gray-600">
               Không chỉ là phần mềm — đây là công cụ bảo tồn di sản gia đình
@@ -232,7 +233,7 @@ export default function AboutPage() {
             <p className="mt-6 text-lg text-gray-600 leading-relaxed">
               Chúng tôi mơ về một ngày mà mỗi gia đình Việt Nam đều có một cuốn gia phả số —
               nơi mọi thành viên, dù ở đâu trên thế giới, đều có thể truy cập, đóng góp và tự
-              hào về cội nguồn của mình. Gia Phả Online không chỉ là công cụ — đó là cầu nối giữa
+              hào về cội nguồn của mình. Gia Phả 365 không chỉ là công cụ — đó là cầu nối giữa
               quá khứ, hiện tại và tương lai của mỗi dòng họ.
             </p>
             <p className="mt-4 text-lg text-gray-600 leading-relaxed">

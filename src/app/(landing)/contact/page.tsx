@@ -18,21 +18,22 @@ import { Textarea } from '@/components/ui/textarea';
 export const metadata: Metadata = {
   title: 'Liên hệ',
   description:
-    'Liên hệ đội ngũ Gia Phả Online — hỗ trợ kỹ thuật, góp ý tính năng, hợp tác. Email: support@giapha.online.',
+    'Liên hệ đội ngũ Gia Phả 365 — hỗ trợ kỹ thuật, góp ý tính năng, hợp tác. Email: support@giapha.online.',
   keywords: [
     'liên hệ gia phả online',
     'hỗ trợ gia phả',
     'support giapha',
     'gia phả trực tuyến',
     'liên hệ hỗ trợ',
+    'gia phả 365',
   ],
 };
 
 const FAQ_ITEMS = [
   {
-    question: 'Gia Phả Online có miễn phí không?',
+    question: 'Gia Phả 365 có miễn phí không?',
     answer:
-      'Có, Gia Phả Online hoàn toàn miễn phí. Bạn có thể tạo không giới hạn gia phả, thêm không giới hạn thành viên, và sử dụng tất cả tính năng mà không cần thanh toán.',
+      'Có, Gia Phả 365 hoàn toàn miễn phí. Bạn có thể tạo không giới hạn gia phả, thêm không giới hạn thành viên, và sử dụng tất cả tính năng mà không cần thanh toán.',
   },
   {
     question: 'Dữ liệu gia phả của tôi có an toàn không?',
@@ -47,7 +48,7 @@ const FAQ_ITEMS = [
   {
     question: 'Hệ thống có hỗ trợ âm lịch Việt Nam không?',
     answer:
-      'Có, Gia Phả Online hỗ trợ đầy đủ âm lịch Việt Nam. Bạn có thể nhập ngày sinh/mất theo lịch Âm, bao gồm cả tháng nhuận. Hệ thống tự động chuyển đổi và hiển thị song song cả dương lịch và âm lịch.',
+      'Có, Gia Phả 365 hỗ trợ đầy đủ âm lịch Việt Nam. Bạn có thể nhập ngày sinh/mất theo lịch Âm, bao gồm cả tháng nhuận. Hệ thống tự động chuyển đổi và hiển thị song song cả dương lịch và âm lịch.',
   },
   {
     question: 'Làm sao để chia sẻ gia phả với người thân?',
@@ -80,7 +81,7 @@ export default function ContactPage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-gray-600 sm:text-xl">
-              Có câu hỏi, góp ý hay cần hỗ trợ? Đội ngũ Gia Phả Online sẵn sàng giúp đỡ bạn.
+              Có câu hỏi, góp ý hay cần hỗ trợ? Đội ngũ Gia Phả 365 sẵn sàng giúp đỡ bạn.
             </p>
           </div>
         </div>

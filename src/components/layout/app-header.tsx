@@ -34,7 +34,7 @@ export function AppHeader() {
     (lineageId > 0 && lineage?.name) ? lineage.name :
     PAGE_TITLES[pathname] ??
     Object.entries(PAGE_TITLES).find(([key]) => pathname.startsWith(key))?.[1] ??
-    'Gia Phả Online';
+    'Gia Phả 365';
 
   const initials = user?.name
     ? user.name

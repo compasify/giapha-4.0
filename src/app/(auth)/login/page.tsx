@@ -50,7 +50,7 @@ function LoginPageInner() {
     <Card className="w-full">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Đăng nhập</CardTitle>
-        <CardDescription>Đăng nhập vào tài khoản Gia Phả Online của bạn</CardDescription>
+        <CardDescription>Đăng nhập vào tài khoản Gia Phả 365 của bạn</CardDescription>
       </CardHeader>
       <CardContent>
         <OAuthButtons />

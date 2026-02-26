@@ -42,7 +42,7 @@ export function CtaSection() {
               Hãy đóng góp ý tưởng của bạn — chúng tôi sẽ biến nó thành hiện thực
             </h3>
             <p className="mt-3 text-base leading-relaxed text-gray-600">
-              Gia Phả Online là dự án mã nguồn mở, được xây dựng bởi cộng đồng.
+              Gia Phả 365 là dự án mã nguồn mở, được xây dựng bởi cộng đồng.
               Góp ý tính năng, báo lỗi, thảo luận ý tưởng hay đóng góp code — mọi đóng góp đều quý giá.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
