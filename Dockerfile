@@ -20,8 +20,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 
-# Generate Prisma client (skipped by npm ci --ignore-scripts)
-RUN npx prisma generate
+# Generate Prisma client types (needed by Turbopack static analysis even in API mode)
+# Dummy DATABASE_URL — prisma generate only creates TS types, no DB connection
+RUN DATABASE_URL="file:./dummy.db" npx prisma generate
 
 # Build-time env vars (override via docker-compose build args)
 ARG NEXT_PUBLIC_API_URL
