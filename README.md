@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  🌐 Sử dụng Online tại <a href="https://giapha.licham365.com">https://giapha.licham365.com</a> — một sản phẩm của <strong>Lịch Âm 365</strong>
+</p>
+
+<p align="center">
   <a href="#tính-năng">Tính năng</a> •
   <a href="#cài-đặt">Cài đặt</a> •
   <a href="#hướng-dẫn-sử-dụng">Hướng dẫn</a> •
@@ -201,6 +205,8 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
 ---
 
 ## 🖥️ App Desktop (Windows / macOS / Linux)
+
+📥 **[Tải bản cài đặt mới nhất tại GitHub Releases](https://github.com/compasify/giapha-4.0/releases)**
 
 Ứng dụng hỗ trợ build thành **app desktop native** thông qua [Tauri 2](https://v2.tauri.app/), chạy offline với backend SQLite tích hợp.
 
