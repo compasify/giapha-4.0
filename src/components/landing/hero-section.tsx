@@ -15,7 +15,7 @@ export function HeroSection() {
           <div className="flex-1 text-center lg:text-left">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-vn-red/20 bg-white/80 px-4 py-1.5 text-sm text-vn-red shadow-sm backdrop-blur-sm">
               <span className="text-base" role="img" aria-label="đèn lồng">🏮</span>
-              <span className="font-medium">Nền tảng gia phả trực tuyến đầu tiên cho người Việt</span>
+              <span className="font-medium">Nền tảng gia phả trực tuyến mã nguồn mở chất lượng cao cho người Việt</span>
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
@@ -57,7 +57,7 @@ export function HeroSection() {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <span className="h-1.5 w-1.5 rounded-full bg-vn-green" />
-                Không cần tải app
+                Sử dụng ở bất kỳ đâu, bất kỳ thiết bị nào
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <span className="h-1.5 w-1.5 rounded-full bg-vn-green" />

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { TreePine, LayoutDashboard, LogOut, User } from 'lucide-react';
+import { TreePine, LayoutDashboard, LogOut, User, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,6 +30,16 @@ export function LandingNav() {
 
   return (
     <nav className="flex items-center gap-2">
+      <a
+        href="https://github.com/compasify/giapha-4.0"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hidden sm:inline-flex items-center text-muted-foreground hover:text-vn-red transition-colors px-2 py-2"
+        aria-label="GitHub"
+      >
+        <Github className="h-5 w-5" />
+      </a>
+
       <Link
         href="#features"
         className="hidden sm:inline-flex text-sm text-muted-foreground hover:text-vn-red transition-colors px-3 py-2"

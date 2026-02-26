@@ -6,12 +6,16 @@ import { HowItWorksSection } from '@/components/landing/how-it-works-section';
 import { TestimonialsSection } from '@/components/landing/testimonials-section';
 import { StatsSection } from '@/components/landing/stats-section';
 import { CtaSection } from '@/components/landing/cta-section';
+import { UseEverywhereSection } from '@/components/landing/use-everywhere-section';
 import { FadeInSection } from '@/components/landing/fade-in-section';
 
 export default function LandingPage() {
   return (
     <main>
       <HeroSection />
+      <FadeInSection>
+        <UseEverywhereSection />
+      </FadeInSection>
       <FadeInSection>
         <FeaturesSection />
       </FadeInSection>

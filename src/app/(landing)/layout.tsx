@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Github } from 'lucide-react';
 import { LandingNav } from '@/components/landing/landing-nav';
 import { AuthHydrator } from '@/providers/auth-hydrator';
 import { getCurrentUser } from '@/app/actions/auth-actions';
@@ -26,9 +27,19 @@ export default async function LandingLayout({
       <footer className="border-t bg-vn-cream/50">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <AppLogo size={16} />
               <span>© 2026 Gia Phả Online</span>
+              <span className="text-gray-300">·</span>
+              <a
+                href="https://github.com/compasify/giapha-4.0"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-vn-red transition-colors"
+              >
+                <Github className="h-4 w-4" />
+                <span>GitHub</span>
+              </a>
             </div>
             <nav className="flex gap-6 text-sm text-muted-foreground">
               <Link href="/about" className="hover:text-vn-red transition-colors">Giới thiệu</Link>
