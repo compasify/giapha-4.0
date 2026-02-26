@@ -19,6 +19,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+
+# Generate Prisma client (skipped by npm ci --ignore-scripts)
+RUN npx prisma generate
+
 # Build-time env vars (override via docker-compose build args)
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_URL
